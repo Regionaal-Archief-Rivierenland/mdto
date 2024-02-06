@@ -2,6 +2,7 @@
 
 import sys
 import os
+from typing import TextIO
 
 # TODO
 # documentatie:
@@ -15,20 +16,35 @@ import os
 #   - this might be useful https://github.com/kislyuk/argcomplete?tab=readme-ov-file
 # - [ ] make a informatieobject subclass, and Object parent class
 #   - This way, the script becomes more useful, as it can also generate other .xml files
+# - [ ] write tests
 
 MAX_NAAM_LENGTH = 80
 
 class Bestand:
+    """MDTO Bestand class"""
 
-
-    def __init__(self, infile, identificatiekenmerk, identificatiebron,
-                 informatieobject, outfile=sys.stdout, naam=None,
+    def __init__(self, infile: TextIO, identificatiekenmerk: str, identificatiebron: str,
+                 informatieobject: TextIO, outfile: TextIO = sys.stdout, naam=None,
                  url=None, quiet=False, force=False):
+        """Create a new Bestand object.
+
+        Args:
+          infile: file-like object that serves as the input file
+          identificatiekenmerk: value of <identificatieKenmerk>
+          identificatiebron: value of <identificatieBron>
+          informatieobject: file-like object serving as corresponding informatieobject
+          output: optional file-like object used to write output to
+          naam: value of <naam>. Defaults to the basename of the input file.
+          url: value of <URLBestand>. Needs to follow the RFC 3986 spec.
+          quiet: silence non-fatal warnings
+          force: do not exit when encountering invalid tag values
+        """
 
         if quiet:
             self.log = lambda: None
         else:
             self.log = lambda m: print(m, file=sys.stderr)
+
         self.force = force
 
         self.identificatiekenmerk = identificatiekenmerk
@@ -37,7 +53,7 @@ class Bestand:
         if naam:
             self.naam = naam
         else:
-            self.naam = os.path.basename(naam)
+            self.naam = os.path.basename(infile.name)
 
     @property
     def naam(self):
@@ -47,14 +63,16 @@ class Bestand:
         Valid value: any string of up to 80 characters in length
         MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/naam
         """
-        return self.naam
+        return self._naam
 
     @naam.setter
     def naam(self, val):
         if len(val) > MAX_NAAM_LENGTH:
-            self.warn(f"<naam> '{val}' exceeds maximum length of {MAX_NAAM_LENGTH}")
-        self.naam = val
+            self.warn(f"value '{val}' of attribute 'naam' "
+                      "exceeds maximum length of {MAX_NAAM_LENGTH}")
+        self._naam = val
 
+    # Helper methods
     def warn(self, warning):
         """Print warning, and exit if self.force == False"""
         self.log(warning)
