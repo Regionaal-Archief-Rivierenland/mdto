@@ -16,7 +16,7 @@ from typing import TextIO, List
 #   - this might be useful https://github.com/kislyuk/argcomplete
 # - [ ] make a informatieobject subclass, and Object parent class
 #   - This way, the script becomes more useful, as it can also generate other .xml files
-# - [ ] write tests
+# - [ ] write unit tests
 
 MAX_NAAM_LENGTH = 80
 
@@ -67,7 +67,7 @@ class Bestand:
 
     @property
     def naam(self):
-        """The MDTO "naam" attribute.
+        """MDTO 'naam' tag value.
 
         Defaults to: the name of the input file.
         Valid value: any string of up to 80 characters in length
@@ -166,14 +166,16 @@ if __name__ == "__main__":
                         help='value of <identificatieBron>. Can be specified multiple times')
     parser.add_argument('--informatieobject', '-O', metavar="INFORMATIEOBJECT.xml", required=True,
                         type=argparse.FileType('r'),
-                        help='path to corresponding informatieobject. Used to infer values for <isRepresentatieVan>')
+                        help='path to corresponding informatieobject. '
+                        'Used to infer values of <isRepresentatieVan>')
 
     # optionals
-    parser.add_argument('--output', '-o', metavar="OUTPUT.xml",
+    # nargs='?' means 'use value of default when nothing given'
+    parser.add_argument('--output', '-o', metavar="OUTPUT.xml", nargs='?',
                         type=argparse.FileType('w'), default=sys.stdout,
                         help='file to write to (default: print to stdout)')
     parser.add_argument('--url', '-u',
-                        help='value of <URLBestand>. Needs to be a RFC 3986 compliant URL')
+                        help='value of <URLBestand>. Needs to be a RFC 3986 compliant URI')
     parser.add_argument('--naam', '-n',
                         help='override <naam> with custom value')
     parser.add_argument('--quiet', '-q', action='store_true',
