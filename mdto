@@ -2,7 +2,7 @@
 
 import sys
 import os
-from typing import TextIO
+from typing import TextIO, List
 
 # TODO
 # documentatie:
@@ -10,10 +10,10 @@ from typing import TextIO
 # - [ ] URL validation
 # - [ ] create getter/setter methods for isrepresentatievan info
 # - [x] check length of naam
-# - [ ] make sure to allow multiple values
+# - [ ] make sure to allow multiple values when "unbounded"
 # - [ ] fish/bash autocomplete
 #   - i think the best approach is supply these as files on git
-#   - this might be useful https://github.com/kislyuk/argcomplete?tab=readme-ov-file
+#   - this might be useful https://github.com/kislyuk/argcomplete
 # - [ ] make a informatieobject subclass, and Object parent class
 #   - This way, the script becomes more useful, as it can also generate other .xml files
 # - [ ] write tests
@@ -23,15 +23,22 @@ MAX_NAAM_LENGTH = 80
 class Bestand:
     """MDTO Bestand class"""
 
-    def __init__(self, infile: TextIO, identificatiekenmerk: str, identificatiebron: str,
-                 informatieobject: TextIO, outfile: TextIO = sys.stdout, naam=None,
-                 url=None, quiet=False, force=False):
+    def __init__(self,
+                 infile: TextIO,
+                 identificatiekenmerken: List[str] | str,
+                 identificatiebronnen: List[str] | str,
+                 informatieobject: TextIO,
+                 outfile: TextIO = sys.stdout,
+                 naam: str = None,
+                 url: str = None,
+                 quiet: bool = False,
+                 force: bool = False):
         """Create a new Bestand object.
 
         Args:
           infile: file-like object that serves as the input file
-          identificatiekenmerk: value of <identificatieKenmerk>
-          identificatiebron: value of <identificatieBron>
+          identificatiekenmerken: str or list of str for <identificatieKenmerk> tags
+          identificatiebronnen: str or list of str for <identificatieBron> tags
           informatieobject: file-like object serving as corresponding informatieobject
           output: optional file-like object used to write output to
           naam: value of <naam>. Defaults to the basename of the input file.
@@ -47,9 +54,12 @@ class Bestand:
 
         self.force = force
 
-        self.identificatiekenmerk = identificatiekenmerk
-        self.identificatiebron = identificatiebron
+        self.identificatiekenmerken = identificatiekenmerken
+        self.identificatiebronnen = identificatiebronnen
 
+        if len(self.identificatiekenmerken) != len(self.identificatiebronnen):
+            self.error("number of 'identificatieKenmerk' tags differs from "
+                       "number of 'identificatieBron' tags")
         if naam:
             self.naam = naam
         else:
@@ -72,12 +82,66 @@ class Bestand:
                       "exceeds maximum length of {MAX_NAAM_LENGTH}")
         self._naam = val
 
+    @property
+    def identificatiekenmerken(self):
+        """MDTO 'identificatieKenmerk' tag value(s).
+
+        Valid value(s): any string or list of strings
+        MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/identificatieKenmerk
+        """
+        return self._identificatiekenmerken
+
+    @identificatiekenmerken.setter
+    def identificatiekenmerken(self, val):
+        # Note that, here, there's no check if len(kenmerken) matches len(bronnen).
+        # However, such a check  might not be useful anyway,  
+        # as self.kenmerken and self.bronnen cannot be updated simultaneously.
+        # Lets just that hope validation checks against the .xsd catch this.
+
+        # allow setting this to a string
+        if isinstance(val, str):
+            self._identificatiekenmerken = [val]
+        elif isinstance(val, list):
+            self._identificatiekenmerken = val
+        else:
+            self.error(f"{type(val)} is not a valid type for <identificatieKenmerk>")
+
+    @property
+    def identificatiebronnen(self):
+        """MDTO 'identificatieBron' tag value(s).
+
+        Valid value(s): any string or list of strings
+        MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/identificatieBron
+        """
+        return self._identificatiebronnen
+
+    @identificatiebronnen.setter
+    def identificatiebronnen(self, val):
+        # allow setting this to a string
+        if isinstance(val, str):
+            self._identificatiebronnen = [val]
+        elif isinstance(val, list):
+            self._identificatiebronnen = val
+        else:
+            self.error(f"{type(val)} is not a valid type for <identificatieBron>")
+
     # Helper methods
     def warn(self, warning):
-        """Print warning, and exit if self.force == False"""
-        self.log(warning)
+        """Print warning, and exit if self.force is not set"""
+        orange = '\033[33m'
+        esc_end = '\033[0m'
+
+        self.log(f"{orange}Warning: {warning}{esc_end}")
         if not self.force:
             sys.exit(-1)
+
+    def error(self, error):
+        """Print error and exit"""
+        red = '\033[31m'
+        esc_end = '\033[0m'
+
+        self.log(f"{red}Error: {error}{esc_end}")
+        sys.exit(-1)
 
 if __name__ == "__main__":
 
@@ -95,9 +159,11 @@ if __name__ == "__main__":
     parser.add_argument('infile', metavar='FILE', type=argparse.FileType('r'),
                         help='file for which a MDTO Bestand .xml file should be generated')
     parser.add_argument('--identificatiekenmerk', '-k', metavar='KENMERK', required=True,
-                        help='value of <identificatieKenmerk>')
-    parser.add_argument('--identificatiebron',  '-b', metavar='BRON', required=True,
-                        help='value of <identificatieBron>')
+                        action='append',
+                        help='value of <identificatieKenmerk>. Can be specified multiple times')
+    parser.add_argument('--identificatiebron', '-b', metavar='BRON', required=True,
+                        action='append',
+                        help='value of <identificatieBron>. Can be specified multiple times')
     parser.add_argument('--informatieobject', '-O', metavar="INFORMATIEOBJECT.xml", required=True,
                         type=argparse.FileType('r'),
                         help='path to corresponding informatieobject. Used to infer values for <isRepresentatieVan>')
@@ -118,7 +184,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    bestand = Bestand(infile=args.infile, identificatiekenmerk=args.identificatiekenmerk,
-                      identificatiebron=args.identificatiebron, informatieobject=args.informatieobject,
-                      output=args.output, naam=args.naam, url=args.url, quiet=args.quiet, force=args.force)
+    bestand = Bestand(infile=args.infile, identificatiekenmerken=args.identificatiekenmerk,
+                      identificatiebronnen=args.identificatiebron, informatieobject=args.informatieobject,
+                      outfile=args.output, naam=args.naam, url=args.url,
+                      quiet=args.quiet, force=args.force)
 
