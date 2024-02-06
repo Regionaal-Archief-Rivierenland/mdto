@@ -28,7 +28,7 @@ class Bestand:
                  identificatiekenmerken: List[str] | str,
                  identificatiebronnen: List[str] | str,
                  informatieobject: TextIO,
-                 outfile: TextIO = sys.stdout,
+                 outfile: TextIO,
                  naam: str = None,
                  url: str = None,
                  quiet: bool = False,
@@ -40,9 +40,9 @@ class Bestand:
           identificatiekenmerken: str or list of str for <identificatieKenmerk> tags
           identificatiebronnen: str or list of str for <identificatieBron> tags
           informatieobject: file-like object serving as corresponding informatieobject
-          output: optional file-like object used to write output to
-          naam: value of <naam>. Defaults to the basename of the input file.
-          url: value of <URLBestand>. Needs to follow the RFC 3986 spec.
+          output: file-like object to write to (defaults to stdout when invoked from cli)
+          naam: value of <naam>. Defaults to the basename of the input file
+          url: value of <URLBestand>
           quiet: silence non-fatal warnings
           force: do not exit when encountering invalid tag values
         """
@@ -190,4 +190,3 @@ if __name__ == "__main__":
                       identificatiebronnen=args.identificatiebron, informatieobject=args.informatieobject,
                       outfile=args.output, naam=args.naam, url=args.url,
                       quiet=args.quiet, force=args.force)
-
