@@ -1,0 +1,106 @@
+#!/bin/python
+
+import sys
+import os
+
+# TODO
+# documentatie:
+# - [ ] Nederlandse (+engelse?) documentatie, en het script in het Engels
+# - [ ] URL validation
+# - [ ] create getter/setter methods for isrepresentatievan info
+# - [x] check length of naam
+# - [ ] make sure to allow multiple values
+# - [ ] fish/bash autocomplete
+#   - i think the best approach is supply these as files on git
+#   - this might be useful https://github.com/kislyuk/argcomplete?tab=readme-ov-file
+# - [ ] make a informatieobject subclass, and Object parent class
+#   - This way, the script becomes more useful, as it can also generate other .xml files
+
+MAX_NAAM_LENGTH = 80
+
+class Bestand:
+
+
+    def __init__(self, infile, identificatiekenmerk, identificatiebron,
+                 informatieobject, outfile=sys.stdout, naam=None,
+                 url=None, quiet=False, force=False):
+
+        if quiet:
+            self.log = lambda: None
+        else:
+            self.log = lambda m: print(m, file=sys.stderr)
+        self.force = force
+
+        self.identificatiekenmerk = identificatiekenmerk
+        self.identificatiebron = identificatiebron
+
+        if naam:
+            self.naam = naam
+        else:
+            self.naam = os.path.basename(naam)
+
+    @property
+    def naam(self):
+        """The MDTO "naam" attribute.
+
+        Defaults to: the name of the input file.
+        Valid value: any string of up to 80 characters in length
+        MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/naam
+        """
+        return self.naam
+
+    @naam.setter
+    def naam(self, val):
+        if len(val) > MAX_NAAM_LENGTH:
+            self.warn(f"<naam> '{val}' exceeds maximum length of {MAX_NAAM_LENGTH}")
+        self.naam = val
+
+    def warn(self, warning):
+        """Print warning, and exit if self.force == False"""
+        self.log(warning)
+        if not self.force:
+            sys.exit(-1)
+
+if __name__ == "__main__":
+
+    import argparse
+
+    bb = '\033[1m'
+    be = '\033[0m'
+    parser = argparse.ArgumentParser(
+        description="Create a 'MDTO Bestand' .xml file based on the characteristics of your input FILE.\n"
+        'The value of most XML tags will be inferred automatically, but some need to be specified manually.\n\n'
+        f'{bb}Example:{be} mdto img001.jpg --identificatiekenmerk 34c5-43a --identificatiebron "Corsa (DMS)" --informatieobject 103.xml',
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="For more information, see https://www.nationaalarchief.nl/archiveren/mdto/bestand")
+
+    parser.add_argument('infile', metavar='FILE', type=argparse.FileType('r'),
+                        help='file for which a MDTO Bestand .xml file should be generated')
+    parser.add_argument('--identificatiekenmerk', '-k', metavar='KENMERK', required=True,
+                        help='value of <identificatieKenmerk>')
+    parser.add_argument('--identificatiebron',  '-b', metavar='BRON', required=True,
+                        help='value of <identificatieBron>')
+    parser.add_argument('--informatieobject', '-O', metavar="INFORMATIEOBJECT.xml", required=True,
+                        type=argparse.FileType('r'),
+                        help='path to corresponding informatieobject. Used to infer values for <isRepresentatieVan>')
+
+    # optionals
+    parser.add_argument('--output', '-o', metavar="OUTPUT.xml",
+                        type=argparse.FileType('w'), default=sys.stdout,
+                        help='file to write to (default: print to stdout)')
+    parser.add_argument('--url', '-u',
+                        help='value of <URLBestand>. Needs to be a RFC 3986 compliant URL')
+    parser.add_argument('--naam', '-n',
+                        help='override <naam> with custom value')
+    parser.add_argument('--quiet', '-q', action='store_true',
+                        help='silence non-fatal warnings')
+    parser.add_argument('--force', '-f', action='store_true',
+                        help="do not exit when a tag's value conflicts with the MDTO spec. "
+                        "Might produce non-compliant files")
+
+    args = parser.parse_args()
+
+    bestand = Bestand(infile=args.infile, identificatiekenmerk=args.identificatiekenmerk,
+                      identificatiebron=args.identificatiebron, informatieobject=args.informatieobject,
+                      output=args.output, naam=args.naam, url=args.url, quiet=args.quiet, force=args.force)
+
