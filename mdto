@@ -103,7 +103,7 @@ class Bestand:
         # as self.kenmerken and self.bronnen cannot be updated simultaneously.
         # Lets just that hope validation checks against the .xsd catch this.
 
-        # allow setting this to a string
+        # permits setting this to a string
         if isinstance(val, str):
             self._identificatiekenmerken = [val]
         elif isinstance(val, list):
@@ -122,7 +122,7 @@ class Bestand:
 
     @identificatiebronnen.setter
     def identificatiebronnen(self, val):
-        # allow setting this to a string
+        # permits setting this to a string
         if isinstance(val, str):
             self._identificatiebronnen = [val]
         elif isinstance(val, list):
