@@ -19,6 +19,7 @@ import validators
 # - [ ] make a informatieobject subclass, and Object parent class
 #   - This way, the script becomes more useful, as it can also generate other .xml files
 # - [ ] write unit tests
+# - [ ] write setup.py script
 
 MAX_NAAM_LENGTH = 80
 
@@ -71,7 +72,7 @@ class Bestand:
 
     @property
     def naam(self):
-        """MDTO 'naam' tag value.
+        """Value of MDTO 'naam' tag.
 
         Defaults to: the name of the input file.
         Valid value: any string of up to 80 characters in length
@@ -88,7 +89,7 @@ class Bestand:
 
     @property
     def identificatiekenmerken(self):
-        """MDTO 'identificatieKenmerk' tag value(s).
+        """Value(s) of MDTO 'identificatieKenmerk' tag(s).
 
         Valid value(s): any string or list of strings
         MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/identificatieKenmerk
@@ -112,7 +113,7 @@ class Bestand:
 
     @property
     def identificatiebronnen(self):
-        """MDTO 'identificatieBron' tag value(s).
+        """Value(s) of MDTO 'identificatieBron' tag(s).
 
         Valid value(s): any string or list of strings
         MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/identificatieBron
