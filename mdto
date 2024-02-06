@@ -4,6 +4,8 @@ import sys
 import os
 from typing import TextIO, List
 
+import validators
+
 # TODO
 # documentatie:
 # - [ ] Nederlandse (+engelse?) documentatie, en het script in het Engels
@@ -65,6 +67,8 @@ class Bestand:
         else:
             self.naam = os.path.basename(infile.name)
 
+        self.url = url
+
     @property
     def naam(self):
         """MDTO 'naam' tag value.
@@ -125,18 +129,43 @@ class Bestand:
         else:
             self.error(f"{type(val)} is not a valid type for <identificatieBron>")
 
+    @property
+    def url(self):
+        """Value of MDTO 'URLBestand' tag.
+
+        Valid value: any RFC 3986 compliant URI
+        MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/URLBestand
+        """
+        return self._url
+
+    @url.setter
+    def url(self, val):
+        # url can be non-existant
+        if val is None:
+            self._url = None
+        elif validators.url(val):
+            self._url = val
+        else:
+            self.warn(f"URL {val} is malformed.")
+
     # Helper methods
     def warn(self, warning):
         """Print warning, and exit if self.force is not set"""
+
         orange = '\033[33m'
         esc_end = '\033[0m'
 
-        self.log(f"{orange}Warning: {warning}{esc_end}")
+        warning = f"{orange}Warning: {warning} "
+        warning += "Skipping." if self.force else "Exiting."
+        warning += esc_end
+
+        self.log(warning)
         if not self.force:
             sys.exit(-1)
 
     def error(self, error):
         """Print error and exit"""
+
         red = '\033[31m'
         esc_end = '\033[0m'
 
