@@ -39,15 +39,14 @@ class Bestand:
         """Create a new Bestand object.
 
         Args:
-          infile: file-like object that serves as the input file
-          identificatiekenmerken: str or list of str for <identificatieKenmerk> tags
-          identificatiebronnen: str or list of str for <identificatieBron> tags
-          informatieobject: file-like object serving as corresponding informatieobject
-          output: file-like object to write to (defaults to stdout when invoked from cli)
-          naam: value of <naam>. Defaults to the basename of the input file
-          url: value of <URLBestand>
-          quiet: silence non-fatal warnings
-          force: do not exit when encountering invalid tag values
+            infile: file-like object that serves as the input file
+            identificatiekenmerken: str or list of str for <identificatieKenmerk> tags
+            identificatiebronnen: str or list of str for <identificatieBron> tags
+            informatieobject: file-like object serving as corresponding informatieobject
+            naam: value of <naam>. Defaults to the basename of the input file
+            url: value of <URLBestand>
+            quiet: silence non-fatal warnings
+            force: do not exit when encountering invalid tag values
         """
 
         if quiet:
@@ -218,5 +217,5 @@ if __name__ == "__main__":
 
     bestand = Bestand(infile=args.infile, identificatiekenmerken=args.identificatiekenmerk,
                       identificatiebronnen=args.identificatiebron, informatieobject=args.informatieobject,
-                      outfile=args.output, naam=args.naam, url=args.url,
+                      naam=args.naam, url=args.url,
                       quiet=args.quiet, force=args.force)
