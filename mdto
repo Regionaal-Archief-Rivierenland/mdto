@@ -5,6 +5,8 @@ import os
 from typing import TextIO, List
 import shutil
 import subprocess
+import hashlib
+from datetime import datetime
 
 # Make into an optional dependency?
 import validators
@@ -58,7 +60,7 @@ class VerwijzingGegevens:
 
     MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/verwijzingGegevens
     """
-    def __init__(self,  verwijzingNaam: str, 
+    def __init__(self,  verwijzingNaam: str,
                  verwijzingIdentificatie: IdentificatieGegevens = None):
         """Create a new verwijzingGegevens object"""
 
@@ -83,15 +85,52 @@ class BegripGegevens:
     MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/begripGegevens
     """
 
-    def __init__(self, 
-                 begripLabel: str, 
-                 begripBegrippenlijst: VerwijzingGegevens,  
+    def __init__(self,
+                 begripLabel: str,
+                 begripBegrippenlijst: VerwijzingGegevens,
                  begripCode: str = None):
         """Create a new BegripGegevens object"""
 
         self.begripLabel = begripLabel
         self.begripBegrippenlijst = begripBegrippenlijst
         self.begripCode = begripCode
+
+    def __str__(self):
+        return self.generate_xml()
+
+    def generate_xml(self):
+        """Transform object into XML tree
+
+        Returns:
+            XML object
+        """
+        return ""
+
+class ChecksumGegevens:
+    """MDTO checksumGegevens class
+
+    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/checksumGegevens
+    """
+
+    def __init__(self, infile: TextIO):
+        """Create a new checksumGegevens object.         
+        Values for checksumAlgoritme, checksumWaarde, and checksumDatum are generated automatically.
+        
+        Args:
+            infile: path to the file to generate checksum data for
+        """
+
+        verwijzing = VerwijzingGegevens(
+            verwijzingNaam='Begrippenlijst ChecksumAlgoritme MDTO')
+
+        self.checksumAlgoritme = BegripGegevens(
+            begripLabel='SHA-256', begripBegrippenlijst=verwijzing)
+
+        # file_digest() expects a file in binary mode, hence `infile.buffer.raw`
+        # FIXME: this value is not the same on each call?
+        self.checksumWaarde = hashlib.file_digest(infile.buffer.raw,
+                                                  "sha256").hexdigest()
+        self.checksumDatum = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
     def __str__(self):
         return self.generate_xml()
@@ -135,7 +174,9 @@ class Bestand:
             self.log = lambda m: print(m, file=sys.stderr)
 
         self.force = force
-        
+
+        if infile.writable():
+            self.error("input file needs to be opened in read-only mode!")
 
         self.identificatiekenmerken = identificatiekenmerken
         self.identificatiebronnen = identificatiebronnen
@@ -196,15 +237,22 @@ class Bestand:
                '-nomatchprintf', 'FAIL', path]
         cmd_result = subprocess.run(cmd, capture_output=True,
                                     shell=False, text=True, check=True)
+        stdout = cmd_result.stdout
+        stderr = cmd_result.stderr
+        returncode = cmd_result.returncode
 
-        if cmd_result.returncode != 0:
+        if '(empty)' in stderr.lower():
+            self.warn(f"file {path} appears to be an empty file!")
+
+        if returncode != 0:
             self.warn(f"fido PRONOM detection on file {path} "
-                      f"failed with error '{cmd_result.stderr}'.")
-        elif cmd_result.stdout.startswith("OK"):
-            results = cmd_result.stdout.split('\n')
+                      f"failed with error '{stderr}'.")
+        elif stdout.startswith("OK"):
+            results = stdout.split('\n')
             if len(results) > 2: # .split('\n') returns a list of two items
                 self.log("Info: fido returned more than one PRONOM match "
                          f"for file {path}. Selecting the first one.")
+
             # strip "OK" from the output
             results = results[0].split(",")[1:]
             verwijzing = VerwijzingGegevens(verwijzingNaam="PRONOM-register")
@@ -319,7 +367,7 @@ class Bestand:
 
         self.log(f"{red}Error: {error}{esc_end}")
         sys.exit(-1)
-        
+
 if __name__ == "__main__":
 
     import argparse
