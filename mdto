@@ -3,13 +3,20 @@
 import sys
 import os
 from typing import TextIO, List
+import shutil
+import subprocess
 
+# Make into an optional dependency?
 import validators
 
 # TODO
-# documentatie:
+# - [x] vraag Leon naar verschillende IDs bij Bestand & Informatieobject
+# - [x] python library rfc3987: may seem useful, but too permissive
 # - [ ] Nederlandse (+engelse?) documentatie, en het script in het Engels
+#   - make a nice ascii cast!
 # - [ ] URL validation
+# - [ ] try siegfried instead of fido for speed?
+#   -  https://openpreservation.org/blogs/siegfried-pronom-based-file-format-identification-tool/
 # - [ ] create getter/setter methods for isrepresentatievan info
 # - [x] check length of naam
 # - [ ] make sure to allow multiple values when "unbounded"
@@ -23,6 +30,80 @@ import validators
 
 MAX_NAAM_LENGTH = 80
 
+class IdentificatieGegevens:
+    """MDTO identificatieGegevens class
+
+    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/identificatieGegevens
+    """
+    def __init__(self, identificatieKenmerk: str, identificatieBron: str):
+        """Create a new identificatieGegevens object"""
+
+        self.identificatieKenmerk = identificatieKenmerk
+        self.identificatieBron = identificatieBron
+
+    def __str__(self):
+        return self.generate_xml()
+
+    def generate_xml(self):
+        """Transform object into XML tree
+
+        Returns:
+            XML object
+        """
+        return ""
+
+
+class VerwijzingGegevens:
+    """MDTO verwijzingGegevens class
+
+    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/verwijzingGegevens
+    """
+    def __init__(self,  verwijzingNaam: str, 
+                 verwijzingIdentificatie: IdentificatieGegevens = None):
+        """Create a new verwijzingGegevens object"""
+
+        self.verwijzingNaam = verwijzingNaam
+        self.verwijzingIdentificatie = verwijzingIdentificatie
+
+    def __str__(self):
+        return self.generate_xml()
+
+    def generate_xml(self):
+        """Transform object into XML tree
+
+        Returns:
+            XML object
+        """
+        return ""
+
+
+class BegripGegevens:
+    """MDTO begripGegevens class
+
+    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/begripGegevens
+    """
+
+    def __init__(self, 
+                 begripLabel: str, 
+                 begripBegrippenlijst: VerwijzingGegevens,  
+                 begripCode: str = None):
+        """Create a new BegripGegevens object"""
+
+        self.begripLabel = begripLabel
+        self.begripBegrippenlijst = begripBegrippenlijst
+        self.begripCode = begripCode
+
+    def __str__(self):
+        return self.generate_xml()
+
+    def generate_xml(self):
+        """Transform object into XML tree
+
+        Returns:
+            XML object
+        """
+        return ""
+
 class Bestand:
     """MDTO Bestand class"""
 
@@ -31,7 +112,6 @@ class Bestand:
                  identificatiekenmerken: List[str] | str,
                  identificatiebronnen: List[str] | str,
                  informatieobject: TextIO,
-                 outfile: TextIO,
                  naam: str = None,
                  url: str = None,
                  quiet: bool = False,
@@ -55,6 +135,7 @@ class Bestand:
             self.log = lambda m: print(m, file=sys.stderr)
 
         self.force = force
+        
 
         self.identificatiekenmerken = identificatiekenmerken
         self.identificatiebronnen = identificatiebronnen
@@ -68,6 +149,73 @@ class Bestand:
             self.naam = os.path.basename(infile.name)
 
         self.url = url
+
+        self.omvang = os.path.getsize(infile.name)
+        self.bestandsformaat = self.pronominfo(infile.name)
+
+    def __str__(self):
+        # TODO: maybe something more useful?
+        return self.generate_xml()
+
+    def generate_xml(self):
+        """Transform object into XML tree
+
+        Returns:
+            XML object
+        """
+        return ""
+
+    def pronominfo(self, path: str) -> BegripGegevens:
+        # FIXME: format more properly
+        """Use fido library to generate PRONOM information about a file.
+        This information can be used in the <bestandsformaat> tag.
+
+        Args:
+            path: the file to inspect
+
+        Returns:
+            ``BegripGegevens`` object with the following properties::
+                {
+                    `begripLabel`: file's PRONOM signature name
+                    `begripCode`: file's PRONOM ID
+                    `begripBegrippenLijst`: reference to PRONOM registry
+                }
+        """
+
+        # Note: fido currently lacks a public API
+        # Hence, the most robust solution is to invoke fido as a cli program
+        # Upstream issue: https://github.com/openpreserve/fido/issues/94
+        # downside is that this is slow, maybe siegfried speeds things up?
+
+        # check if fido program exists
+        if not shutil.which('fido'):
+            self.error("'fido' not found. For installation instructions, "
+                       "see https://github.com/openpreserve/fido#installation")
+
+        cmd = ['fido', '-q', '-matchprintf', 'OK,%(info.formatname)s,%(info.puid)s,\n',
+               '-nomatchprintf', 'FAIL', path]
+        cmd_result = subprocess.run(cmd, capture_output=True,
+                                    shell=False, text=True, check=True)
+        breakpoint()
+        if cmd_result.returncode != 0:
+            self.warn(f"fido PRONOM detection on file {path} "
+                      f"failed with error '{cmd_result.stderr}'.")
+        elif cmd_result.stdout.startswith("OK"):
+            results = cmd_result.stdout.split('\n')
+            if len(results) > 2: # .split('\n') returns a list of two elems
+                self.log("Info: fido returned more than one PRONOM match "
+                         f"for file {path}. Selecting the first one.")
+            # strip "OK" from the output
+            results = results[0].split(",")[1:]
+            verwijzing = VerwijzingGegevens(verwijzingNaam="PRONOM-register")
+            return BegripGegevens(begripLabel=results[0],
+                                  begripCode=results[1],
+                                  begripBegrippenlijst=verwijzing)
+        else:
+            self.warn(f"fido failed to detect PRONOM ID of file {path}.")
+
+        # can return None in case PRONOM detection fails and force == True
+        return None
 
     @property
     def naam(self):
@@ -98,7 +246,7 @@ class Bestand:
     @identificatiekenmerken.setter
     def identificatiekenmerken(self, val):
         # Note that, here, there's no check if len(kenmerken) matches len(bronnen).
-        # However, such a check  might not be useful anyway,  
+        # However, such a check  might not be useful anyway,
         # as self.kenmerken and self.bronnen cannot be updated simultaneously.
         # Lets just that hope validation checks against the .xsd catch this.
 
@@ -171,7 +319,7 @@ class Bestand:
 
         self.log(f"{red}Error: {error}{esc_end}")
         sys.exit(-1)
-
+        
 if __name__ == "__main__":
 
     import argparse
@@ -216,6 +364,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     bestand = Bestand(infile=args.infile, identificatiekenmerken=args.identificatiekenmerk,
-                      identificatiebronnen=args.identificatiebron, informatieobject=args.informatieobject,
-                      naam=args.naam, url=args.url,
+                      identificatiebronnen=args.identificatiebron,
+                      informatieobject=args.informatieobject, naam=args.naam, url=args.url,
                       quiet=args.quiet, force=args.force)
