@@ -7,21 +7,24 @@ import shutil
 import subprocess
 import hashlib
 from datetime import datetime
+from lxml import etree
 
 # Make into an optional dependency?
 import validators
 
 # TODO
+# - [ ] do something elegant with __str__ methods?
 # - [x] vraag Leon naar verschillende IDs bij Bestand & Informatieobject
 # - [x] python library rfc3987: may seem useful, but too permissive
 # - [ ] Nederlandse (+engelse?) documentatie, en het script in het Engels
 #   - make a nice ascii cast!
 # - [ ] URL validation
 # - [ ] try siegfried instead of fido for speed?
-#   -  https://openpreservation.org/blogs/siegfried-pronom-based-file-format-identification-tool/
+#   - https://openpreservation.org/blogs/siegfried-pronom-based-file-format-identification-tool/
+#   - also, fido lacks behind the pronom spec; .wacz are not recognized for example  
 # - [ ] create getter/setter methods for isrepresentatievan info
 # - [x] check length of naam
-# - [ ] make sure to allow multiple values when "unbounded"
+# - [x] make sure to allow multiple values when "unbounded"
 # - [ ] fish/bash autocomplete
 #   - i think the best approach is supply these as files on git
 #   - this might be useful https://github.com/kislyuk/argcomplete
@@ -43,16 +46,25 @@ class IdentificatieGegevens:
         self.identificatieKenmerk = identificatieKenmerk
         self.identificatieBron = identificatieBron
 
-    def __str__(self):
-        return self.generate_xml()
-
-    def generate_xml(self):
+    def to_xml(self, root: str) -> etree._Element:
         """Transform object into XML tree
 
+        Args:
+            root: name of the elements' parent tag
+
         Returns:
-            XML object
+            lxml tree
         """
-        return ""
+
+        root = etree.Element(root)
+
+        kenmerk = etree.SubElement(root, "identificatieKenmerk")
+        kenmerk.text = self.identificatieKenmerk
+
+        bron = etree.SubElement(root, "identificatieBron")
+        bron.text = self.identificatieBron
+
+        return root
 
 
 class VerwijzingGegevens:
@@ -60,23 +72,36 @@ class VerwijzingGegevens:
 
     MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/verwijzingGegevens
     """
-    def __init__(self,  verwijzingNaam: str,
+    def __init__(self, verwijzingNaam: str,
                  verwijzingIdentificatie: IdentificatieGegevens = None):
         """Create a new verwijzingGegevens object"""
 
         self.verwijzingNaam = verwijzingNaam
         self.verwijzingIdentificatie = verwijzingIdentificatie
 
-    def __str__(self):
-        return self.generate_xml()
-
-    def generate_xml(self):
+    def to_xml(self, root) -> etree._Element:
         """Transform object into XML tree
 
+        Args:
+            root: name of the elements' parent tag
+
         Returns:
-            XML object
+            lxml tree element
         """
-        return ""
+        
+        root = etree.Element(root)
+        
+        verwijzingnaam = etree.SubElement(root, "verwijzingNaam")
+        verwijzingnaam.text = self.verwijzingNaam
+
+
+        if self.verwijzingIdentificatie:
+            # append lxml element directly to tree, 
+            # and set name of the root element to 'verwijzingIdentificatie'
+            root.append(
+                self.verwijzingIdentificatie.to_xml("verwijzingIdentificatie"))
+        
+        return root
 
 
 class BegripGegevens:
@@ -95,23 +120,36 @@ class BegripGegevens:
         self.begripBegrippenlijst = begripBegrippenlijst
         self.begripCode = begripCode
 
-    def __str__(self):
-        return self.generate_xml()
-
-    def generate_xml(self):
+    def to_xml(self, root) -> etree._Element:
         """Transform object into XML tree
 
+        Args:
+            root: name of the elements' parent tag
+
         Returns:
-            XML object
+            lxml tree element
         """
-        return ""
+        
+        root = etree.Element(root)
+        
+        begriplabel = etree.SubElement(root, "begripLabel")
+        begriplabel.text = self.begripLabel
+
+        if begripcode:
+            begripcode = etree.SubElement(root, "begripCode")
+            begripcode.text = self.begripCode
+
+        root.append(
+            self.begripBegrippenlijst.to_xml("begripBegrippenlijst"))
+        
+        return root
 
 class ChecksumGegevens:
     """MDTO checksumGegevens class
 
     MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/checksumGegevens
     """
-
+    
     def __init__(self, infile: TextIO):
         """Create a new checksumGegevens object.         
         Values for checksumAlgoritme, checksumWaarde, and checksumDatum are generated automatically.
@@ -132,14 +170,11 @@ class ChecksumGegevens:
                                                   "sha256").hexdigest()
         self.checksumDatum = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-    def __str__(self):
-        return self.generate_xml()
-
-    def generate_xml(self):
+    def to_xml(self):
         """Transform object into XML tree
 
         Returns:
-            XML object
+            lxml tree element
         """
         return ""
 
@@ -175,15 +210,24 @@ class Bestand:
 
         self.force = force
 
+        # file needs to be in read-only mode
         if infile.writable():
-            self.error("input file needs to be opened in read-only mode!")
+            infile.close()
+            infile = open(infile.name, 'r')
 
-        self.identificatiekenmerken = identificatiekenmerken
-        self.identificatiebronnen = identificatiebronnen
-
-        if len(self.identificatiekenmerken) != len(self.identificatiebronnen):
+        if len(identificatiekenmerken) != len(identificatiebronnen):
             self.error("number of 'identificatieKenmerk' tags differs from "
                        "number of 'identificatieBron' tags")
+
+        # permit setting kenmerk and bron to a string
+        if isinstance(identificatiekenmerken, str):
+            identificatiekenmerken = [identificatiekenmerken]
+        if isinstance(identificatiebronnen, str):
+            identificatiebronnen = [identificatiebronnen]
+
+        self.ids = [IdentificatieGegevens(k, b) 
+                    for k, b in zip(identificatiebronnen, identificatiekenmerken)]
+
         if naam:
             self.naam = naam
         else:
@@ -193,16 +237,14 @@ class Bestand:
 
         self.omvang = os.path.getsize(infile.name)
         self.bestandsformaat = self.pronominfo(infile.name)
+        
+        infile.close()
 
-    def __str__(self):
-        # TODO: maybe something more useful?
-        return self.generate_xml()
-
-    def generate_xml(self):
+    def to_xml(self):
         """Transform object into XML tree
 
         Returns:
-            XML object
+            lxml tree element
         """
         return ""
 
@@ -281,49 +323,6 @@ class Bestand:
             self.warn(f"value '{val}' of attribute 'naam' "
                       "exceeds maximum length of {MAX_NAAM_LENGTH}")
         self._naam = val
-
-    @property
-    def identificatiekenmerken(self):
-        """Value(s) of MDTO 'identificatieKenmerk' tag(s).
-
-        Valid value(s): any string or list of strings
-        MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/identificatieKenmerk
-        """
-        return self._identificatiekenmerken
-
-    @identificatiekenmerken.setter
-    def identificatiekenmerken(self, val):
-        # Note that, here, there's no check if len(kenmerken) matches len(bronnen).
-        # However, such a check  might not be useful anyway,
-        # as self.kenmerken and self.bronnen cannot be updated simultaneously.
-        # Lets just that hope validation checks against the .xsd catch this.
-
-        # permits setting this to a string
-        if isinstance(val, str):
-            self._identificatiekenmerken = [val]
-        elif isinstance(val, list):
-            self._identificatiekenmerken = val
-        else:
-            self.error(f"{type(val)} is not a valid type for <identificatieKenmerk>")
-
-    @property
-    def identificatiebronnen(self):
-        """Value(s) of MDTO 'identificatieBron' tag(s).
-
-        Valid value(s): any string or list of strings
-        MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/identificatieBron
-        """
-        return self._identificatiebronnen
-
-    @identificatiebronnen.setter
-    def identificatiebronnen(self, val):
-        # permits setting this to a string
-        if isinstance(val, str):
-            self._identificatiebronnen = [val]
-        elif isinstance(val, list):
-            self._identificatiebronnen = val
-        else:
-            self.error(f"{type(val)} is not a valid type for <identificatieBron>")
 
     @property
     def url(self):
