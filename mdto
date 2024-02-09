@@ -226,7 +226,7 @@ class Bestand:
             identificatiebronnen = [identificatiebronnen]
 
         self.ids = [IdentificatieGegevens(k, b) 
-                    for k, b in zip(identificatiebronnen, identificatiekenmerken)]
+                    for k, b in zip(identificatiekenmerken, identificatiebronnen)]
 
         if naam:
             self.naam = naam
