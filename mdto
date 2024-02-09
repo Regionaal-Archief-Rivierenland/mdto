@@ -13,7 +13,11 @@ from lxml import etree
 import validators
 
 # TODO
-# - [ ] do something elegant with __str__ methods?
+
+# - [ ] ❗ make most classes into a dataclasses, using the @dataclass decorator
+#   - https://docs.python.org/3/library/dataclasses.html
+#   - for docstrings, see https://stackoverflow.com/questions/51125415/how-do-i-document-a-constructor-for-a-class-using-python-dataclasses
+#     - may be nice if some doc info from the .xsd would be visible in docstring
 # - [x] vraag Leon naar verschillende IDs bij Bestand & Informatieobject
 # - [x] python library rfc3987: may seem useful, but too permissive
 # - [ ] Nederlandse (+engelse?) documentatie, en het script in het Engels
