@@ -498,7 +498,7 @@ class Bestand:
         esc_end = '\033[0m'
 
         warning = f"{orange}Warning: {warning} "
-        warning += "Skipping." if self.force else "Exiting."
+        warning += "Continuing anyway." if self.force else "Exiting."
         warning += esc_end
 
         self.log(warning)
