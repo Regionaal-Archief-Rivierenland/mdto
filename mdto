@@ -223,8 +223,8 @@ class Bestand:
                  force: bool = False):
         """Create a new Bestand object.
 
-        Callers should provide either `informatieobject` or `isrepresentatievan`. 
-        When using `informatieobject`, the correct values for <isRepresentatieVan> are 
+        Callers should provide either `informatieobject` or `isrepresentatievan`.
+        When using `informatieobject`, the correct values for <isRepresentatieVan> are
         infered by parsing the XML of the given file.
 
         Callers may provide a list of strings to `identificatiekenmerken` and `identificatiebronnen`
@@ -236,7 +236,7 @@ class Bestand:
             identificatiebronnen (List[str] | str): str or list of str for <identificatieBron> tags
             informatieobject (TextIO, optional): file name or file-like object which
                 represents an MDTO InformatieObject in XML form.
-                Used to infer values for <isRepresentatieVan>. 
+                Used to infer values for <isRepresentatieVan>.
             isrepresentatievan (VerwijzingGegevens, optional): used to generate values under <isRepresentatieVan>
             naam (str, optional): value of <naam>. Defaults to the basename of `infile`
             url (str, optional): value of <URLBestand>
@@ -249,12 +249,12 @@ class Bestand:
             # (Option #1) Using a VerwijzingGegevens object:
             verwijzing = VerwijzingGegevens('Verlenen kapvergunning Hooigracht 21 Den Haag')
             with open('19880405KapvergunningHoogracht.pdf') as f:
-                bestand = Bestand(f, '34c5-4379-9f1a-5c37872e316d', 'Proza (OCW-DMS)', 
+                bestand = Bestand(f, '34c5-4379-9f1a-5c37872e316d', 'Proza (OCW-DMS)',
                                   isrepresentatievan=verwijzing)
 
             # (Option #2) Using a pre-existing XML file that represents an InformatieObject:
             with open('informatieobject_001.xml') as f:
-                bestand = Bestand("vergunning.pdf", '34c5-4379-9f1a-5c37872e316d', 'Proza (OCW-DMS)', 
+                bestand = Bestand("vergunning.pdf", '34c5-4379-9f1a-5c37872e316d', 'Proza (OCW-DMS)',
                                   informatieobject=f)
             ```
         """
@@ -317,17 +317,17 @@ class Bestand:
         ```
 
         Args:
-            mdto_tag (bool, optional): set this to False if <bestand> instead of <MDTO> 
-              should be the root tag. This is useful if your XML contains multiple trees. 
+            mdto_tag (bool, optional): set this to False if <bestand> instead of <MDTO>
+              should be the root tag. This is useful if your XML contains multiple trees.
               Defaults to True.
 
         Returns:
-            ET.ElementTree: XML tree representing Bestand object. This object can be written to a file by 
+            ET.ElementTree: XML tree representing Bestand object. This object can be written to a file by
                 calling `.write()`.
         """
 
         mdto = ET.Element(
-            "MDTO", 
+            "MDTO",
             attrib = {
                 "xmlns" : "https://www.nationaalarchief.nl/mdto",
                 "xmlns:xsi" : "http://www.w3.org/2001/XMLSchema-instance",
@@ -474,7 +474,7 @@ class Bestand:
     def _process_file(self, file_or_filename) -> TextIO:
         """
         Return file-object in case input is already a file.
-        Otherwise, assume the argument is a path, and return 
+        Otherwise, assume the argument is a path, and return
         a new file object.
         """
 
@@ -566,5 +566,5 @@ if __name__ == "__main__":
     # encoding='unicode' is needed because ElementTree.write writes bytes by default
     # And writing to bytes to stdout won't work, apperently
     # www.stackoverflow.com/questions/47554882/elementtree-write-function-does-not-write-to-standard-out
-    xml.write(args.output, encoding='unicode', xml_declaration=True, 
+    xml.write(args.output, encoding='unicode', xml_declaration=True,
               short_empty_elements=False)
