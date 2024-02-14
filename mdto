@@ -1,13 +1,14 @@
 #!/bin/python
 
-import sys
 import os
 import shutil
+import sys
 import subprocess
 import hashlib
 from typing import TextIO, List
 from datetime import datetime
-from lxml import etree
+import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import Element
 from dataclasses import dataclass
 
 # Make into an optional dependency?
@@ -15,7 +16,8 @@ import validators
 
 # TODO
 
-# - [ ] ❗ make most classes into a dataclasses, using the @dataclass decorator
+# - [ ] Convert self.error to native Raise calls?
+# - [x] ❗ make most classes into a dataclasses, using the @dataclass decorator
 #   - https://docs.python.org/3/library/dataclasses.html
 #   - for docstrings, see https://stackoverflow.com/questions/51125415/how-do-i-document-a-constructor-for-a-class-using-python-dataclasses
 #     - may be nice if some doc info from the .xsd would be visible in docstring
@@ -26,7 +28,7 @@ import validators
 # - [x] URL validation
 # - [ ] try siegfried instead of fido for speed?
 #   - https://openpreservation.org/blogs/siegfried-pronom-based-file-format-identification-tool/
-#   - also, fido lacks behind the pronom spec; .wacz are not recognized for example  
+#   - also, fido lacks behind the pronom spec; .wacz are not recognized for example
 # - [x] check length of naam
 # - [x] make sure to allow multiple values when "unbounded"
 # - [ ] fish/bash autocomplete
@@ -52,22 +54,22 @@ class IdentificatieGegevens:
     identificatieKenmerk: str
     identificatieBron: str
 
-    def to_xml(self, root: str) -> etree._Element:
-        """Transform object into XML tree
+    def to_xml(self, root: str) -> ET.Element:
+        """Transform IdentificatieGegevens into XML tree
 
         Args:
-            root: name of the elements' new parent tag
+            root (str): name of the new root tag
 
         Returns:
-            lxml tree
+            ET.Element: XML representation of IdentificatieGegevens with new root tag
         """
 
-        root = etree.Element(root)
+        root = ET.Element(root)
 
-        kenmerk = etree.SubElement(root, "identificatieKenmerk")
+        kenmerk = ET.SubElement(root, "identificatieKenmerk")
         kenmerk.text = self.identificatieKenmerk
 
-        bron = etree.SubElement(root, "identificatieBron")
+        bron = ET.SubElement(root, "identificatieBron")
         bron.text = self.identificatieBron
 
         return root
@@ -80,32 +82,32 @@ class VerwijzingGegevens:
 
     Args:
         verwijzingNaam (str): De naam van het object waarnaar verwezen wordt
-        verwijzingIdentificatie (IdentificatieGegevens): De identificatie van het object waarnaar verwezen wordt
+        verwijzingIdentificatie (IdentificatieGegevens, optional): De identificatie van het object waarnaar verwezen wordt
     """
     verwijzingNaam: str
     verwijzingIdentificatie: IdentificatieGegevens = None
 
-    def to_xml(self, root) -> etree._Element:
-        """Transform object into XML tree
+    def to_xml(self, root: str) -> ET.Element:
+        """Transform VerwijzingGegevens into XML tree
 
         Args:
-            root: name of the elements' parent tag
+            root (str): name of the new root tag
 
         Returns:
-            lxml tree element
+            ET.Element: XML representation of VerwijzingGegevens with new root tag
         """
-        
-        root = etree.Element(root)
-        
-        verwijzingnaam = etree.SubElement(root, "verwijzingNaam")
+
+        root = ET.Element(root)
+
+        verwijzingnaam = ET.SubElement(root, "verwijzingNaam")
         verwijzingnaam.text = self.verwijzingNaam
 
         if self.verwijzingIdentificatie:
-            # append lxml element directly to tree, 
+            # append lxml element directly to tree,
             # and set name of the root element to 'verwijzingIdentificatie'
             root.append(
                 self.verwijzingIdentificatie.to_xml("verwijzingIdentificatie"))
-        
+
         return root
 
 @dataclass
@@ -113,38 +115,38 @@ class BegripGegevens:
     """MDTO begripGegevens class
 
     MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/begripGegevens
-    
+
     Args:
         begripLabel (str): De tekstweergave van het begrip dat is toegekend in de begrippenlijst
         begripBegrippenlijst (VerwijzingGegevens): Verwijzing naar een beschrijving van de begrippen
-        begripCode (str): De code die aan het begrip is toegekend in de begrippenlijst
+        begripCode (str, optional): De code die aan het begrip is toegekend in de begrippenlijst
     """
-    begripLabel: str,
-    begripBegrippenlijst: VerwijzingGegevens,
-    begripCode: str = None 
+    begripLabel: str
+    begripBegrippenlijst: VerwijzingGegevens
+    begripCode: str = None
 
-    def to_xml(self, root) -> etree._Element:
-        """Transform object into XML tree
+    def to_xml(self, root: str) -> ET.Element:
+        """Transform BegripGegevens into XML tree
 
         Args:
-            root: name of the elements' parent tag
+            root (str): name of the new root tag
 
         Returns:
-            lxml tree element
+            ET.Element: XML representation of BegripGegevens with new root tag
         """
-        
-        root = etree.Element(root)
-        
-        begriplabel = etree.SubElement(root, "begripLabel")
+
+        root = ET.Element(root)
+
+        begriplabel = ET.SubElement(root, "begripLabel")
         begriplabel.text = self.begripLabel
 
-        if begripcode:
-            begripcode = etree.SubElement(root, "begripCode")
+        if self.begripCode:
+            begripcode = ET.SubElement(root, "begripCode")
             begripcode.text = self.begripCode
 
         root.append(
             self.begripBegrippenlijst.to_xml("begripBegrippenlijst"))
-        
+
         return root
 
 class ChecksumGegevens:
@@ -152,47 +154,57 @@ class ChecksumGegevens:
 
     MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/checksumGegevens
     """
-    
+
     def __init__(self, infile: TextIO, algorithm: str='sha256'):
-        """Create a new checksumGegevens object.         
-        Values for checksumAlgoritme, checksumWaarde, and checksumDatum are generated automatically.
-        
+        """Create a new checksumGegevens object.
+        Values for `checksumAlgoritme`, `checksumWaarde`, and `checksumDatum` are generated automatically.
+
         Args:
             infile (TextIO): file-like object to generate checksum data for
-            algorithm (str): checksum algorithm to use; defaults to sha256. For valid values, see https://docs.python.org/3/library/hashlib.html
+            algorithm (str, optional): checksum algorithm to use; defaults to sha256. For valid values, see https://docs.python.org/3/library/hashlib.html
         """
 
         verwijzing = VerwijzingGegevens(
             verwijzingNaam='Begrippenlijst ChecksumAlgoritme MDTO')
 
         self.checksumAlgoritme = BegripGegevens(
-            begripLabel=algorithm.upper(), begripBegrippenlijst=verwijzing)
+            begripLabel=algorithm.upper().replace("SHA", "SHA-"),
+            begripBegrippenlijst=verwijzing)
 
         # file_digest() expects a file in binary mode, hence `infile.buffer.raw`
         # FIXME: this value is not the same on each call?
-        self.checksumWaarde = hashlib.file_digest(infile.buffer.raw,
-                                                  algorithm).hexdigest()
+        self.checksumWaarde = hashlib.file_digest(
+            infile.buffer.raw, algorithm).hexdigest()
 
         self.checksumDatum = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-        def to_xml(self, root) -> etree._Element:
-            """Transform object into XML tree
+    def to_xml(self) -> ET.Element:
+        """Transform Bestand into XML tree with the following structure:
 
-            Args:
-                root: name of the elements' parent tag
+        ```xml
+        <checksum>
+            <checksumAlgoritme>
+                …
+            </checksumAlgoritme>
+            <checksumWaarde>…</checksumWaarde>
+            <checksumDatum>…</checksumDatum>
+        </checksum>
+        ```
 
-            Returns:
-                lxml tree element
+       Returns:
+            ET.Element: XML representation of object
         """
 
-        root = etree.Element(root)
+        root = ET.Element("checksum")
 
         root.append(
                 self.checksumAlgoritme.to_xml("checksumAlgoritme"))
-        
 
-        bron = etree.SubElement(root, "identificatieBron")
-        bron.text = self.identificatieBron
+        checksumWaarde = ET.SubElement(root, "checksumWaarde")
+        checksumWaarde.text = self.checksumWaarde
+
+        checksumDatum = ET.SubElement(root, "checksumDatum")
+        checksumDatum.text = self.checksumDatum
 
         return root
 
@@ -200,25 +212,51 @@ class Bestand:
     """MDTO Bestand class"""
 
     def __init__(self,
-                 infile: TextIO,
+                 infile: TextIO | str,
                  identificatiekenmerken: List[str] | str,
                  identificatiebronnen: List[str] | str,
-                 informatieobject: TextIO,
+                 informatieobject: TextIO = None,
+                 isrepresentatievan: VerwijzingGegevens = None,
                  naam: str = None,
                  url: str = None,
                  quiet: bool = False,
                  force: bool = False):
         """Create a new Bestand object.
 
+        Callers should provide either `informatieobject` or `isrepresentatievan`. 
+        When using `informatieobject`, the correct values for <isRepresentatieVan> are 
+        infered by parsing the XML of the given file.
+
+        Callers may provide a list of strings to `identificatiekenmerken` and `identificatiebronnen`
+        in case multiple <identificatie> tags are desired. Otherwise, a single str suffices.
+
         Args:
-            infile: file-like object that serves as the input file
-            identificatiekenmerken: str or list of str for <identificatieKenmerk> tags
-            identificatiebronnen: str or list of str for <identificatieBron> tags
-            informatieobject: file-like object serving as corresponding informatieobject
-            naam: value of <naam>. Defaults to the basename of the input file
-            url: value of <URLBestand>
-            quiet: silence non-fatal warnings
-            force: do not exit when encountering invalid tag values
+            infile (TextIO | str): file name or file-like object serves as the input file
+            identificatiekenmerken (List[str] | str): str or list of str for <identificatieKenmerk> tags
+            identificatiebronnen (List[str] | str): str or list of str for <identificatieBron> tags
+            informatieobject (TextIO, optional): file name or file-like object which
+                represents an MDTO InformatieObject in XML form.
+                Used to infer values for <isRepresentatieVan>. 
+            isrepresentatievan (VerwijzingGegevens, optional): used to generate values under <isRepresentatieVan>
+            naam (str, optional): value of <naam>. Defaults to the basename of `infile`
+            url (str, optional): value of <URLBestand>
+            quiet (bool, optional): silence non-fatal warnings
+            force (bool, optional): do not exit when encountering invalid tag values
+
+        Example:
+            ```python
+
+            # (Option #1) Using a VerwijzingGegevens object:
+            verwijzing = VerwijzingGegevens('Verlenen kapvergunning Hooigracht 21 Den Haag')
+            with open('19880405KapvergunningHoogracht.pdf') as f:
+                bestand = Bestand(f, '34c5-4379-9f1a-5c37872e316d', 'Proza (OCW-DMS)', 
+                                  isrepresentatievan=verwijzing)
+
+            # (Option #2) Using a pre-existing XML file that represents an InformatieObject:
+            with open('informatieobject_001.xml') as f:
+                bestand = Bestand("vergunning.pdf", '34c5-4379-9f1a-5c37872e316d', 'Proza (OCW-DMS)', 
+                                  informatieobject=f)
+            ```
         """
 
         if quiet:
@@ -228,14 +266,8 @@ class Bestand:
 
         self.force = force
 
-        # file needs to be in read-only mode
-        if infile.writable():
-            infile.close()
-            infile = open(infile.name, 'r')
-
-        if len(identificatiekenmerken) != len(identificatiebronnen):
-            self.error("number of 'identificatieKenmerk' tags differs from "
-                       "number of 'identificatieBron' tags")
+        # allow infile to be a path (str)
+        infile = self._process_file(infile)
 
         # permit setting kenmerk and bron to a string
         if isinstance(identificatiekenmerken, str):
@@ -243,7 +275,11 @@ class Bestand:
         if isinstance(identificatiebronnen, str):
             identificatiebronnen = [identificatiebronnen]
 
-        self.ids = [IdentificatieGegevens(k, b) 
+        if len(identificatiekenmerken) != len(identificatiebronnen):
+            self.error("number of 'identificatieKenmerk' tags differs from "
+                       "number of 'identificatieBron' tags")
+
+        self.ids = [IdentificatieGegevens(k, b)
                     for k, b in zip(identificatiekenmerken, identificatiebronnen)]
 
         if naam:
@@ -252,19 +288,88 @@ class Bestand:
             self.naam = os.path.basename(infile.name)
 
         self.url = url
-
         self.omvang = os.path.getsize(infile.name)
         self.bestandsformaat = self.pronominfo(infile.name)
-        
+        self.checksum = ChecksumGegevens(infile)
+
+        if isrepresentatievan:
+            self.isrepresentatievan = isrepresentatievan
+        elif informatieobject:
+            informatieobject = self._process_file(informatieobject)
+            self.isrepresentatievan = None 
+        else:
+            self.error("Bestand() expects a parameter for either "
+                       "'informatieobject' or 'isrepresentatievan'")
+
         infile.close()
 
-    def to_xml(self):
-        """Transform object into XML tree
+    def to_xml(self, mdto_tag: bool = True) -> ET.ElementTree:
+        """
+        Transform Bestand into an XML tree with the following structure:
+
+        ```xml
+        <MDTO xmlns=…>
+            <bestand>
+                …
+            </bestand>
+        </MDTO>
+        ```
+
+        Args:
+            mdto_tag (bool, optional): set this to False if <bestand> instead of <MDTO> 
+              should be the root tag. This is useful if your XML contains multiple trees. 
+              Defaults to True.
 
         Returns:
-            lxml tree element
+            ET.ElementTree: XML tree representing Bestand object. This object can be written to a file by 
+                calling `.write()`.
         """
-        return ""
+
+        mdto = ET.Element(
+            "MDTO", 
+            attrib = {
+                "xmlns" : "https://www.nationaalarchief.nl/mdto",
+                "xmlns:xsi" : "http://www.w3.org/2001/XMLSchema-instance",
+                "xsi:schemaLocation" :
+                "https://www.nationaalarchief.nl/mdto https://www.nationaalarchief.nl/mdto/MDTO-XML1.0.1.xsd"
+            })
+
+        if mdto_tag:
+            root = ET.SubElement(mdto, 'bestand')
+        else:
+            root = ET.Element('bestand')
+
+        for i in self.ids:
+            root.append(i.to_xml("identificatie"))
+
+        naam = ET.SubElement(root, "naam")
+        naam.text = self.naam
+
+        omvang = ET.SubElement(root, "omvang")
+        # ET wants str types
+        omvang.text = str(self.omvang)
+
+        # bestandsformaat can be None if fido detection failed and force is True
+        if self.bestandsformaat:
+            root.append(
+                self.bestandsformaat.to_xml("bestandsformaat"))
+        else:
+            ET.SubElement(root, "bestandsformaat")
+
+        root.append(
+                self.checksum.to_xml())
+
+        if self.url:
+            url = ET.SubElement(root, "URLBestand")
+            url.text = self.url
+
+        # root.append(
+        #     self.isrepresentatievan.to_xml("isRepresentatieVan"))
+
+        tree = ET.ElementTree(mdto) if mdto_tag else ET.ElementTree(root)
+        ET.indent(tree, space='    ') # use 4 spaces as indentation
+
+        return tree
 
     def pronominfo(self, path: str) -> BegripGegevens:
         # FIXME: format more properly
@@ -272,7 +377,7 @@ class Bestand:
         This information can be used in the <bestandsformaat> tag.
 
         Args:
-            path: the file to inspect
+            path (str): path to the file to inspect
 
         Returns:
             ``BegripGegevens`` object with the following properties::
@@ -295,15 +400,18 @@ class Bestand:
 
         cmd = ['fido', '-q', '-matchprintf', 'OK,%(info.formatname)s,%(info.puid)s,\n',
                '-nomatchprintf', 'FAIL', path]
+
         cmd_result = subprocess.run(cmd, capture_output=True,
                                     shell=False, text=True, check=True)
         stdout = cmd_result.stdout
         stderr = cmd_result.stderr
         returncode = cmd_result.returncode
 
+        # fido prints warnings about empty files to stderr
         if '(empty)' in stderr.lower():
             self.warn(f"file {path} appears to be an empty file!")
 
+        # check for errors
         if returncode != 0:
             self.warn(f"fido PRONOM detection on file {path} "
                       f"failed with error '{stderr}'.")
@@ -362,6 +470,26 @@ class Bestand:
             self.warn(f"URL {val} is malformed.")
 
     # Helper methods
+    def _process_file(self, file_or_filename) -> TextIO:
+        """
+        Return file-object in case input is already a file.
+        Otherwise, assume the argument is a path, and return 
+        a new file object.
+        """
+
+        if isinstance(file_or_filename, str):
+            return open(file_or_filename, 'r')
+        elif hasattr(file_or_filename, 'read'):
+            # file needs to be in read-only mode
+            if file_or_filename.writable():
+                filename = file_or_filename.name
+                file_or_filename.close()
+                return open(filename, 'r')
+            else:
+                return file_or_filename
+        else:
+            raise TypeError("provided invalid file to Bestand()")
+
     def warn(self, warning):
         """Print warning, and exit if self.force is not set"""
 
@@ -432,3 +560,10 @@ if __name__ == "__main__":
                       identificatiebronnen=args.identificatiebron,
                       informatieobject=args.informatieobject, naam=args.naam, url=args.url,
                       quiet=args.quiet, force=args.force)
+
+    xml = bestand.to_xml()
+    # encoding='unicode' is needed because ElementTree.write writes bytes by default
+    # And writing to bytes to stdout won't work, apperently
+    # www.stackoverflow.com/questions/47554882/elementtree-write-function-does-not-write-to-standard-out
+    xml.write(args.output, encoding='unicode', xml_declaration=True, 
+              short_empty_elements=False)
