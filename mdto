@@ -296,11 +296,12 @@ class Bestand:
             self.isrepresentatievan = isrepresentatievan
         elif informatieobject:
             informatieobject = self._process_file(informatieobject)
-            self.isrepresentatievan = None 
+            self.isrepresentatievan = None
         else:
             self.error("Bestand() expects a parameter for either "
                        "'informatieobject' or 'isrepresentatievan'")
 
+        informatieobject.close()
         infile.close()
 
     def to_xml(self, mdto_tag: bool = True) -> ET.ElementTree:
