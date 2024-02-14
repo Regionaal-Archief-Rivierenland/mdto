@@ -260,7 +260,7 @@ class Bestand:
         """
 
         if quiet:
-            self.log = lambda: None
+            self.log = lambda m: None
         else:
             self.log = lambda m: print(m, file=sys.stderr)
 
