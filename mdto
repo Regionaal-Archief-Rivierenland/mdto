@@ -2,12 +2,13 @@
 
 import sys
 import os
-from typing import TextIO, List
 import shutil
 import subprocess
 import hashlib
+from typing import TextIO, List
 from datetime import datetime
 from lxml import etree
+from dataclasses import dataclass
 
 # Make into an optional dependency?
 import validators
@@ -22,11 +23,10 @@ import validators
 # - [x] python library rfc3987: may seem useful, but too permissive
 # - [ ] Nederlandse (+engelse?) documentatie, en het script in het Engels
 #   - make a nice ascii cast!
-# - [ ] URL validation
+# - [x] URL validation
 # - [ ] try siegfried instead of fido for speed?
 #   - https://openpreservation.org/blogs/siegfried-pronom-based-file-format-identification-tool/
 #   - also, fido lacks behind the pronom spec; .wacz are not recognized for example  
-# - [ ] create getter/setter methods for isrepresentatievan info
 # - [x] check length of naam
 # - [x] make sure to allow multiple values when "unbounded"
 # - [ ] fish/bash autocomplete
@@ -39,22 +39,24 @@ import validators
 
 MAX_NAAM_LENGTH = 80
 
+@dataclass
 class IdentificatieGegevens:
     """MDTO identificatieGegevens class
 
     MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/identificatieGegevens
-    """
-    def __init__(self, identificatieKenmerk: str, identificatieBron: str):
-        """Create a new identificatieGegevens object"""
 
-        self.identificatieKenmerk = identificatieKenmerk
-        self.identificatieBron = identificatieBron
+    Args:
+        identificatieKenmerk (str): Een kenmerk waarmee een object geïdentificeerd kan worden
+        identificatieBron (str): Herkomst van het kenmerk
+    """
+    identificatieKenmerk: str
+    identificatieBron: str
 
     def to_xml(self, root: str) -> etree._Element:
         """Transform object into XML tree
 
         Args:
-            root: name of the elements' parent tag
+            root: name of the elements' new parent tag
 
         Returns:
             lxml tree
@@ -70,18 +72,18 @@ class IdentificatieGegevens:
 
         return root
 
-
+@dataclass
 class VerwijzingGegevens:
     """MDTO verwijzingGegevens class
 
     MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/verwijzingGegevens
-    """
-    def __init__(self, verwijzingNaam: str,
-                 verwijzingIdentificatie: IdentificatieGegevens = None):
-        """Create a new verwijzingGegevens object"""
 
-        self.verwijzingNaam = verwijzingNaam
-        self.verwijzingIdentificatie = verwijzingIdentificatie
+    Args:
+        verwijzingNaam (str): De naam van het object waarnaar verwezen wordt
+        verwijzingIdentificatie (IdentificatieGegevens): De identificatie van het object waarnaar verwezen wordt
+    """
+    verwijzingNaam: str
+    verwijzingIdentificatie: IdentificatieGegevens = None
 
     def to_xml(self, root) -> etree._Element:
         """Transform object into XML tree
@@ -98,7 +100,6 @@ class VerwijzingGegevens:
         verwijzingnaam = etree.SubElement(root, "verwijzingNaam")
         verwijzingnaam.text = self.verwijzingNaam
 
-
         if self.verwijzingIdentificatie:
             # append lxml element directly to tree, 
             # and set name of the root element to 'verwijzingIdentificatie'
@@ -107,22 +108,20 @@ class VerwijzingGegevens:
         
         return root
 
-
+@dataclass
 class BegripGegevens:
     """MDTO begripGegevens class
 
     MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/begripGegevens
+    
+    Args:
+        begripLabel (str): De tekstweergave van het begrip dat is toegekend in de begrippenlijst
+        begripBegrippenlijst (VerwijzingGegevens): Verwijzing naar een beschrijving van de begrippen
+        begripCode (str): De code die aan het begrip is toegekend in de begrippenlijst
     """
-
-    def __init__(self,
-                 begripLabel: str,
-                 begripBegrippenlijst: VerwijzingGegevens,
-                 begripCode: str = None):
-        """Create a new BegripGegevens object"""
-
-        self.begripLabel = begripLabel
-        self.begripBegrippenlijst = begripBegrippenlijst
-        self.begripCode = begripCode
+    begripLabel: str,
+    begripBegrippenlijst: VerwijzingGegevens,
+    begripCode: str = None 
 
     def to_xml(self, root) -> etree._Element:
         """Transform object into XML tree
@@ -154,33 +153,48 @@ class ChecksumGegevens:
     MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/checksumGegevens
     """
     
-    def __init__(self, infile: TextIO):
+    def __init__(self, infile: TextIO, algorithm: str='sha256'):
         """Create a new checksumGegevens object.         
         Values for checksumAlgoritme, checksumWaarde, and checksumDatum are generated automatically.
         
         Args:
-            infile: path to the file to generate checksum data for
+            infile (TextIO): file-like object to generate checksum data for
+            algorithm (str): checksum algorithm to use; defaults to sha256. For valid values, see https://docs.python.org/3/library/hashlib.html
         """
 
         verwijzing = VerwijzingGegevens(
             verwijzingNaam='Begrippenlijst ChecksumAlgoritme MDTO')
 
         self.checksumAlgoritme = BegripGegevens(
-            begripLabel='SHA-256', begripBegrippenlijst=verwijzing)
+            begripLabel=algorithm.upper(), begripBegrippenlijst=verwijzing)
 
         # file_digest() expects a file in binary mode, hence `infile.buffer.raw`
         # FIXME: this value is not the same on each call?
         self.checksumWaarde = hashlib.file_digest(infile.buffer.raw,
-                                                  "sha256").hexdigest()
+                                                  algorithm).hexdigest()
+
         self.checksumDatum = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-    def to_xml(self):
-        """Transform object into XML tree
+        def to_xml(self, root) -> etree._Element:
+            """Transform object into XML tree
 
-        Returns:
-            lxml tree element
+            Args:
+                root: name of the elements' parent tag
+
+            Returns:
+                lxml tree element
         """
-        return ""
+
+        root = etree.Element(root)
+
+        root.append(
+                self.checksumAlgoritme.to_xml("checksumAlgoritme"))
+        
+
+        bron = etree.SubElement(root, "identificatieBron")
+        bron.text = self.identificatieBron
+
+        return root
 
 class Bestand:
     """MDTO Bestand class"""
