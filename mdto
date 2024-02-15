@@ -106,7 +106,7 @@ class VerwijzingGegevens:
     def verwijzingNaam(self, val):
         if len(val) > MAX_NAAM_LENGTH:
             # FIX ME: log to stderr and the like 
-            print(f"value '{val}' of attribute 'verwijzingNaam' "
+            print(f"value '{val}' of element 'verwijzingNaam' "
                   f"exceeds maximum length of {MAX_NAAM_LENGTH}")
             sys.exit(-1)
         self._verwijzingNaam = val
@@ -538,7 +538,7 @@ class Bestand:
     @naam.setter
     def naam(self, val):
         if len(val) > MAX_NAAM_LENGTH:
-            self.warn(f"value '{val}' of attribute 'naam' "
+            self.warn(f"value '{val}' of element 'naam' "
                       f"exceeds maximum length of {MAX_NAAM_LENGTH}")
         self._naam = val
 
