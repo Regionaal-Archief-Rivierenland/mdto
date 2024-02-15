@@ -91,6 +91,26 @@ class VerwijzingGegevens:
     verwijzingNaam: str
     verwijzingIdentificatie: IdentificatieGegevens = None
 
+    @property
+    def verwijzingNaam(self):
+        """Value of MDTO 'verwijzingNaam' tag.
+
+        Valid values: 
+            any string of up to 80 characters in length
+        MDTO docs: 
+            https://www.nationaalarchief.nl/archiveren/mdto/verwijzingNaam
+        """
+        return self._verwijzingNaam
+
+    @verwijzingNaam.setter
+    def verwijzingNaam(self, val):
+        if len(val) > MAX_NAAM_LENGTH:
+            # FIX ME: log to stderr and the like 
+            print(f"value '{val}' of attribute 'verwijzingNaam' "
+                  f"exceeds maximum length of {MAX_NAAM_LENGTH}")
+            sys.exit(-1)
+        self._verwijzingNaam = val
+
     def to_xml(self, root: str) -> ET.Element:
         """Transform VerwijzingGegevens into XML tree
 
@@ -519,7 +539,7 @@ class Bestand:
     def naam(self, val):
         if len(val) > MAX_NAAM_LENGTH:
             self.warn(f"value '{val}' of attribute 'naam' "
-                      "exceeds maximum length of {MAX_NAAM_LENGTH}")
+                      f"exceeds maximum length of {MAX_NAAM_LENGTH}")
         self._naam = val
 
     @property
