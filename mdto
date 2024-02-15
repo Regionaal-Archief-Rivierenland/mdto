@@ -8,7 +8,6 @@ import hashlib
 from typing import TextIO, List
 from datetime import datetime
 import xml.etree.ElementTree as ET
-from xml.etree.ElementTree import Element
 from dataclasses import dataclass
 
 # Make into an optional dependency?
@@ -41,6 +40,7 @@ import validators
 
 MAX_NAAM_LENGTH = 80
 
+
 @dataclass
 class IdentificatieGegevens:
     """MDTO identificatieGegevens class
@@ -51,6 +51,7 @@ class IdentificatieGegevens:
         identificatieKenmerk (str): Een kenmerk waarmee een object geïdentificeerd kan worden
         identificatieBron (str): Herkomst van het kenmerk
     """
+
     identificatieKenmerk: str
     identificatieBron: str
 
@@ -74,6 +75,7 @@ class IdentificatieGegevens:
 
         return root
 
+
 @dataclass
 class VerwijzingGegevens:
     """MDTO verwijzingGegevens class
@@ -84,6 +86,7 @@ class VerwijzingGegevens:
         verwijzingNaam (str): De naam van het object waarnaar verwezen wordt
         verwijzingIdentificatie (IdentificatieGegevens, optional): De identificatie van het object waarnaar verwezen wordt
     """
+
     verwijzingNaam: str
     verwijzingIdentificatie: IdentificatieGegevens = None
 
@@ -110,6 +113,7 @@ class VerwijzingGegevens:
 
         return root
 
+
 @dataclass
 class BegripGegevens:
     """MDTO begripGegevens class
@@ -121,6 +125,7 @@ class BegripGegevens:
         begripBegrippenlijst (VerwijzingGegevens): Verwijzing naar een beschrijving van de begrippen
         begripCode (str, optional): De code die aan het begrip is toegekend in de begrippenlijst
     """
+
     begripLabel: str
     begripBegrippenlijst: VerwijzingGegevens
     begripCode: str = None
@@ -144,10 +149,10 @@ class BegripGegevens:
             begripcode = ET.SubElement(root, "begripCode")
             begripcode.text = self.begripCode
 
-        root.append(
-            self.begripBegrippenlijst.to_xml("begripBegrippenlijst"))
+        root.append(self.begripBegrippenlijst.to_xml("begripBegrippenlijst"))
 
         return root
+
 
 class ChecksumGegevens:
     """MDTO checksumGegevens class
@@ -155,7 +160,7 @@ class ChecksumGegevens:
     MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/checksumGegevens
     """
 
-    def __init__(self, infile: TextIO, algorithm: str='sha256'):
+    def __init__(self, infile: TextIO, algorithm: str = "sha256"):
         """Create a new checksumGegevens object.
         Values for `checksumAlgoritme`, `checksumWaarde`, and `checksumDatum` are generated automatically.
 
@@ -174,31 +179,31 @@ class ChecksumGegevens:
         # file_digest() expects a file in binary mode, hence `infile.buffer.raw`
         # FIXME: this value is not the same on each call?
         self.checksumWaarde = hashlib.file_digest(
-            infile.buffer.raw, algorithm).hexdigest()
+            infile.buffer.raw, algorithm
+        ).hexdigest()
 
         self.checksumDatum = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
     def to_xml(self) -> ET.Element:
         """Transform Bestand into XML tree with the following structure:
 
-        ```xml
-        <checksum>
-            <checksumAlgoritme>
-                …
-            </checksumAlgoritme>
-            <checksumWaarde>…</checksumWaarde>
-            <checksumDatum>…</checksumDatum>
-        </checksum>
-        ```
+         ```xml
+         <checksum>
+             <checksumAlgoritme>
+                 …
+             </checksumAlgoritme>
+             <checksumWaarde>…</checksumWaarde>
+             <checksumDatum>…</checksumDatum>
+         </checksum>
+         ```
 
-       Returns:
-            ET.Element: XML representation of object
+        Returns:
+             ET.Element: XML representation of object
         """
 
         root = ET.Element("checksum")
 
-        root.append(
-                self.checksumAlgoritme.to_xml("checksumAlgoritme"))
+        root.append(self.checksumAlgoritme.to_xml("checksumAlgoritme"))
 
         checksumWaarde = ET.SubElement(root, "checksumWaarde")
         checksumWaarde.text = self.checksumWaarde
@@ -208,19 +213,22 @@ class ChecksumGegevens:
 
         return root
 
+
 class Bestand:
     """MDTO Bestand class"""
 
-    def __init__(self,
-                 infile: TextIO | str,
-                 identificatiekenmerken: List[str] | str,
-                 identificatiebronnen: List[str] | str,
-                 informatieobject: TextIO = None,
-                 isrepresentatievan: VerwijzingGegevens = None,
-                 naam: str = None,
-                 url: str = None,
-                 quiet: bool = False,
-                 force: bool = False):
+    def __init__(
+        self,
+        infile: TextIO | str,
+        identificatiekenmerken: List[str] | str,
+        identificatiebronnen: List[str] | str,
+        informatieobject: TextIO = None,
+        isrepresentatievan: VerwijzingGegevens = None,
+        naam: str = None,
+        url: str = None,
+        quiet: bool = False,
+        force: bool = False,
+    ):
         """Create a new Bestand object.
 
         Callers should provide either `informatieobject` or `isrepresentatievan`.
@@ -328,17 +336,17 @@ class Bestand:
 
         mdto = ET.Element(
             "MDTO",
-            attrib = {
-                "xmlns" : "https://www.nationaalarchief.nl/mdto",
-                "xmlns:xsi" : "http://www.w3.org/2001/XMLSchema-instance",
-                "xsi:schemaLocation" :
-                "https://www.nationaalarchief.nl/mdto https://www.nationaalarchief.nl/mdto/MDTO-XML1.0.1.xsd"
-            })
+            attrib={
+                "xmlns": "https://www.nationaalarchief.nl/mdto",
+                "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                "xsi:schemaLocation": "https://www.nationaalarchief.nl/mdto https://www.nationaalarchief.nl/mdto/MDTO-XML1.0.1.xsd",
+            },
+        )
 
         if mdto_tag:
-            root = ET.SubElement(mdto, 'bestand')
+            root = ET.SubElement(mdto, "bestand")
         else:
-            root = ET.Element('bestand')
+            root = ET.Element("bestand")
 
         for i in self.ids:
             root.append(i.to_xml("identificatie"))
@@ -352,13 +360,11 @@ class Bestand:
 
         # bestandsformaat can be None if fido detection failed and force is True
         if self.bestandsformaat:
-            root.append(
-                self.bestandsformaat.to_xml("bestandsformaat"))
+            root.append(self.bestandsformaat.to_xml("bestandsformaat"))
         else:
             ET.SubElement(root, "bestandsformaat")
 
-        root.append(
-                self.checksum.to_xml())
+        root.append(self.checksum.to_xml())
 
         if self.url:
             url = ET.SubElement(root, "URLBestand")
@@ -368,7 +374,7 @@ class Bestand:
         #     self.isrepresentatievan.to_xml("isRepresentatieVan"))
 
         tree = ET.ElementTree(mdto) if mdto_tag else ET.ElementTree(root)
-        ET.indent(tree, space='    ') # use 4 spaces as indentation
+        ET.indent(tree, space="    ")  # use 4 spaces as indentation
 
         return tree
 
@@ -395,21 +401,30 @@ class Bestand:
         # downside is that this is slow, maybe siegfried speeds things up?
 
         # check if fido program exists
-        if not shutil.which('fido'):
-            self.error("'fido' not found. For installation instructions, "
-                       "see https://github.com/openpreserve/fido#installation")
+        if not shutil.which("fido"):
+            self.error(
+                "'fido' not found. For installation instructions, "
+                "see https://github.com/openpreserve/fido#installation")
 
-        cmd = ['fido', '-q', '-matchprintf', 'OK,%(info.formatname)s,%(info.puid)s,\n',
-               '-nomatchprintf', 'FAIL', path]
+        cmd = [
+            "fido",
+            "-q",
+            "-matchprintf",
+            "OK,%(info.formatname)s,%(info.puid)s,\n",
+            "-nomatchprintf",
+            "FAIL",
+            path,
+        ]
 
-        cmd_result = subprocess.run(cmd, capture_output=True,
-                                    shell=False, text=True, check=True)
+        cmd_result = subprocess.run(
+            cmd, capture_output=True, shell=False, text=True, check=True
+        )
         stdout = cmd_result.stdout
         stderr = cmd_result.stderr
         returncode = cmd_result.returncode
 
         # fido prints warnings about empty files to stderr
-        if '(empty)' in stderr.lower():
+        if "(empty)" in stderr.lower():
             self.warn(f"file {path} appears to be an empty file!")
 
         # check for errors
@@ -425,9 +440,11 @@ class Bestand:
             # strip "OK" from the output
             results = results[0].split(",")[1:]
             verwijzing = VerwijzingGegevens(verwijzingNaam="PRONOM-register")
-            return BegripGegevens(begripLabel=results[0],
-                                  begripCode=results[1],
-                                  begripBegrippenlijst=verwijzing)
+            return BegripGegevens(
+                begripLabel=results[0],
+                begripCode=results[1],
+                begripBegrippenlijst=verwijzing,
+            )
         else:
             self.warn(f"fido failed to detect PRONOM ID of file {path}.")
 
@@ -479,13 +496,13 @@ class Bestand:
         """
 
         if isinstance(file_or_filename, str):
-            return open(file_or_filename, 'r')
-        elif hasattr(file_or_filename, 'read'):
+            return open(file_or_filename, "r")
+        elif hasattr(file_or_filename, "read"):
             # file needs to be in read-only mode
             if file_or_filename.writable():
                 filename = file_or_filename.name
                 file_or_filename.close()
-                return open(filename, 'r')
+                return open(filename, "r")
             else:
                 return file_or_filename
         else:
@@ -522,49 +539,92 @@ if __name__ == "__main__":
     be = '\033[0m'
     parser = argparse.ArgumentParser(
         description="Create a 'MDTO Bestand' .xml file based on the characteristics of your input FILE.\n"
-        'The value of most XML tags will be inferred automatically, but some need to be specified manually.\n\n'
+        "The value of most XML tags will be inferred automatically, but some need to be specified manually.\n\n"
         f'{bb}Example:{be} mdto img001.jpg --identificatiekenmerk 34c5-43a --identificatiebron "Corsa (DMS)" --informatieobject 103.xml',
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog="For more information, see https://www.nationaalarchief.nl/archiveren/mdto/bestand")
+        epilog="For more information, see https://www.nationaalarchief.nl/archiveren/mdto/bestand",
+    )
 
-    parser.add_argument('infile', metavar='FILE', type=argparse.FileType('r'),
-                        help='file for which a MDTO Bestand .xml file should be generated')
-    parser.add_argument('--identificatiekenmerk', '-k', metavar='KENMERK', required=True,
-                        action='append',
-                        help='value of <identificatieKenmerk>. Can be specified multiple times')
-    parser.add_argument('--identificatiebron', '-b', metavar='BRON', required=True,
-                        action='append',
-                        help='value of <identificatieBron>. Can be specified multiple times')
-    parser.add_argument('--informatieobject', '-O', metavar="INFORMATIEOBJECT.xml", required=True,
-                        type=argparse.FileType('r'),
-                        help='path to corresponding informatieobject. '
-                        'Used to infer values of <isRepresentatieVan>')
+    parser.add_argument(
+        "infile",
+        metavar="FILE",
+        type=argparse.FileType("r"),
+        help="file for which a MDTO Bestand .xml file should be generated",
+    )
+    parser.add_argument(
+        "--identificatiekenmerk",
+        "-k",
+        metavar="KENMERK",
+        required=True,
+        action="append",
+        help="value of <identificatieKenmerk>. Can be specified multiple times",
+    )
+    parser.add_argument(
+        "--identificatiebron",
+        "-b",
+        metavar="BRON",
+        required=True,
+        action="append",
+        help="value of <identificatieBron>. Can be specified multiple times",
+    )
+    parser.add_argument(
+        "--informatieobject",
+        "-O",
+        metavar="INFORMATIEOBJECT.xml",
+        required=True,
+        type=argparse.FileType("r"),
+        help="path to corresponding informatieobject. "
+        "Used to infer values of <isRepresentatieVan>",
+    )
 
     # optionals
     # nargs='?' means 'use value of default when nothing given'
-    parser.add_argument('--output', '-o', metavar="OUTPUT.xml", nargs='?',
-                        type=argparse.FileType('w'), default=sys.stdout,
-                        help='file to write to (default: print to stdout)')
-    parser.add_argument('--url', '-u',
-                        help='value of <URLBestand>. Needs to be a RFC 3986 compliant URI')
-    parser.add_argument('--naam', '-n',
-                        help='override <naam> with custom value')
-    parser.add_argument('--quiet', '-q', action='store_true',
-                        help='silence non-fatal warnings')
-    parser.add_argument('--force', '-f', action='store_true',
-                        help="do not exit when a tag's value conflicts with the MDTO spec. "
-                        "Might produce non-compliant files")
+    parser.add_argument(
+        "--output",
+        "-o",
+        metavar="OUTPUT.xml",
+        nargs="?",
+        type=argparse.FileType("w"),
+        default=sys.stdout,
+        help="file to write to (default: print to stdout)",
+    )
+    parser.add_argument(
+        "--url",
+        "-u",
+        help="value of <URLBestand>. Needs to be a RFC 3986 compliant URI",
+    )
+    parser.add_argument("--naam", "-n", help="override <naam> with custom value")
+    parser.add_argument(
+        "--quiet", "-q", action="store_true", help="silence non-fatal warnings"
+    )
+    parser.add_argument(
+        "--force",
+        "-f",
+        action="store_true",
+        help="do not exit when a tag's value conflicts with the MDTO spec. "
+        "Might produce non-compliant files",
+    )
 
     args = parser.parse_args()
 
-    bestand = Bestand(infile=args.infile, identificatiekenmerken=args.identificatiekenmerk,
-                      identificatiebronnen=args.identificatiebron,
-                      informatieobject=args.informatieobject, naam=args.naam, url=args.url,
-                      quiet=args.quiet, force=args.force)
+    bestand = Bestand(
+        infile=args.infile,
+        identificatiekenmerken=args.identificatiekenmerk,
+        identificatiebronnen=args.identificatiebron,
+        informatieobject=args.informatieobject,
+        naam=args.naam,
+        url=args.url,
+        quiet=args.quiet,
+        force=args.force,
+    )
 
     xml = bestand.to_xml()
     # encoding='unicode' is needed because ElementTree.write writes bytes by default
     # And writing to bytes to stdout won't work, apperently
     # www.stackoverflow.com/questions/47554882/elementtree-write-function-does-not-write-to-standard-out
-    xml.write(args.output, encoding='unicode', xml_declaration=True,
-              short_empty_elements=False)
+    xml.write(
+        args.output,
+        encoding="unicode",
+        xml_declaration=True,
+        short_empty_elements=False,
+    )
