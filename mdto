@@ -45,7 +45,8 @@ MAX_NAAM_LENGTH = 80
 class IdentificatieGegevens:
     """MDTO identificatieGegevens class
 
-    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/identificatieGegevens
+    MDTO docs: 
+        https://www.nationaalarchief.nl/archiveren/mdto/identificatieGegevens
 
     Args:
         identificatieKenmerk (str): Een kenmerk waarmee een object geïdentificeerd kan worden
@@ -245,7 +246,7 @@ class Bestand:
             informatieobject (TextIO, optional): file name or file-like object which
                 represents an MDTO InformatieObject in XML form.
                 Used to infer values for <isRepresentatieVan>.
-            isrepresentatievan (VerwijzingGegevens, optional): used to generate values under <isRepresentatieVan>
+            isrepresentatievan (VerwijzingGegevens, optional): directly specify values for <isRepresentatieVan>
             naam (str, optional): value of <naam>. Defaults to the basename of `infile`
             url (str, optional): value of <URLBestand>
             quiet (bool, optional): silence non-fatal warnings
@@ -304,7 +305,7 @@ class Bestand:
             self.isrepresentatievan = isrepresentatievan
         elif informatieobject:
             informatieobject = self._process_file(informatieobject)
-            self.isrepresentatievan = None
+            self.isrepresentatievan = self.detect_verwijzing(informatieobject)
         else:
             self.error("Bestand() expects a parameter for either "
                        "'informatieobject' or 'isrepresentatievan'")
@@ -370,8 +371,11 @@ class Bestand:
             url = ET.SubElement(root, "URLBestand")
             url.text = self.url
 
-        # root.append(
-        #     self.isrepresentatievan.to_xml("isRepresentatieVan"))
+        # can be None if XML parsing failed
+        if self.isrepresentatievan:
+            root.append(self.isrepresentatievan.to_xml("isRepresentatieVan"))
+        else:
+            ET.SubElement(root, "isRepresentatieVan")
 
         tree = ET.ElementTree(mdto) if mdto_tag else ET.ElementTree(root)
         ET.indent(tree, space="    ")  # use 4 spaces as indentation
@@ -450,6 +454,56 @@ class Bestand:
 
         # can return None in case PRONOM detection fails and force == True
         return None
+
+    def detect_verwijzing(self, informatieobject_xml: TextIO) -> VerwijzingGegevens:
+        """
+        A MDTO Bestand object must contain a reference to a corresponding informatieobject.
+        Specifically, it expects an <isRepresentatieVan> tag with the following children:
+
+        1. <verwijzingNaam>: name of the informatieobject
+        2. <verwijzingIdentificatie> (optional): reference to the 
+        informatieobject's ID and source thereof
+        
+        This function infers these so-called 'VerwijzingGegevens' by
+        parsing the XML of the file `informatieobject_xml`.
+        
+        MDTO Docs:
+            https://www.nationaalarchief.nl/archiveren/mdto/isRepresentatieVan
+
+        Args:
+            informatieobject_xml (TextIO): XML file to infer VerwijzingGegevens from
+
+        Returns:
+            `VerwijzingGegevens`, refering to the informatieobject
+        """
+        
+        id_gegevens = None
+        namespaces = {'mdto': 'https://www.nationaalarchief.nl/mdto'}
+        tree = ET.parse(informatieobject_xml)
+        root = tree.getroot()
+
+        id_xpath = ".//mdto:informatieobject/mdto:identificatie/"
+
+        kenmerk = root.find(
+            id_xpath + 'mdto:identificatieKenmerk', namespaces=namespaces)
+        bron = root.find(
+            id_xpath + 'mdto:identificatieBron', namespaces=namespaces)
+        naam = root.find(".//mdto:informatieobject/mdto:naam", 
+                         namespaces=namespaces)
+
+        # bool(ET.Element) == False, according to the docs
+        # So use ¬p and ¬q == ¬(p or q)
+        if not (kenmerk is None or bron is None):
+            id_gegevens = IdentificatieGegevens(kenmerk.text, bron.text)
+
+        if naam is None:
+            self.warn(f"informatieobject in {informatieobject_xml.name} "
+                      "lacks a <naam> tag.")
+            return None
+        else:
+            return VerwijzingGegevens(naam.text, id_gegevens)
+
+
 
     @property
     def naam(self):
