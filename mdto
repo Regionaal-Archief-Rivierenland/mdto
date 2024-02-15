@@ -38,7 +38,38 @@ import validators
 # - [ ] write unit tests
 # - [ ] write setup.py script
 
+# globals
 MAX_NAAM_LENGTH = 80
+_force, _quiet = False, False
+
+# helper methods
+def _log(m):
+    if _quiet:
+        return
+    else:
+        print(m, file=sys.stderr)
+
+def _warn(warning):
+    """Log warning, and exit if force == False"""
+    orange = '\033[33m'
+    esc_end = '\033[0m'
+
+    warning = f"{orange}Warning: {warning} "
+    warning += "Continuing anyway." if _force else "Exiting."
+    warning += esc_end
+
+    _log(warning)
+    if not _force:
+        sys.exit(-1)
+
+def _error(error):
+    """Log error and exit"""
+
+    red = '\033[31m'
+    esc_end = '\033[0m'
+
+    _log(f"{red}Error: {error}{esc_end}")
+    sys.exit(-1)
 
 
 @dataclass
@@ -76,7 +107,6 @@ class IdentificatieGegevens:
 
         return root
 
-
 @dataclass
 class VerwijzingGegevens:
     """MDTO verwijzingGegevens class
@@ -105,10 +135,8 @@ class VerwijzingGegevens:
     @verwijzingNaam.setter
     def verwijzingNaam(self, val):
         if len(val) > MAX_NAAM_LENGTH:
-            # FIX ME: log to stderr and the like 
-            print(f"value '{val}' of element 'verwijzingNaam' "
-                  f"exceeds maximum length of {MAX_NAAM_LENGTH}")
-            sys.exit(-1)
+            _warn(f"value '{val}' of element 'verwijzingNaam' "
+                  f"exceeds maximum length of {MAX_NAAM_LENGTH}.")
         self._verwijzingNaam = val
 
     def to_xml(self, root: str) -> ET.Element:
@@ -288,12 +316,9 @@ class Bestand:
             ```
         """
 
-        if quiet:
-            self.log = lambda m: None
-        else:
-            self.log = lambda m: print(m, file=sys.stderr)
-
-        self.force = force
+        global _force, _quiet
+        _quiet = quiet
+        _force = force
 
         # allow infile to be a path (str)
         infile = self._process_file(infile)
@@ -305,7 +330,7 @@ class Bestand:
             identificatiebronnen = [identificatiebronnen]
 
         if len(identificatiekenmerken) != len(identificatiebronnen):
-            self.error("number of 'identificatieKenmerk' tags differs from "
+            _error("number of 'identificatieKenmerk' tags differs from "
                        "number of 'identificatieBron' tags")
 
         self.ids = [IdentificatieGegevens(k, b)
@@ -327,8 +352,8 @@ class Bestand:
             informatieobject = self._process_file(informatieobject)
             self.isrepresentatievan = self.detect_verwijzing(informatieobject)
         else:
-            self.error("Bestand() expects a parameter for either "
-                       "'informatieobject' or 'isrepresentatievan'")
+            _error("Bestand() expects a parameter for either "
+                       "'informatieobject' or 'isrepresentatievan' (none given)")
 
         informatieobject.close()
         infile.close()
@@ -426,8 +451,7 @@ class Bestand:
 
         # check if fido program exists
         if not shutil.which("fido"):
-            self.error(
-                "'fido' not found. For installation instructions, "
+            _error("'fido' not found. For installation instructions, "
                 "see https://github.com/openpreserve/fido#installation")
 
         cmd = [
@@ -449,16 +473,16 @@ class Bestand:
 
         # fido prints warnings about empty files to stderr
         if "(empty)" in stderr.lower():
-            self.warn(f"file {path} appears to be an empty file!")
+            _warn(f"file {path} appears to be an empty file!")
 
         # check for errors
         if returncode != 0:
-            self.warn(f"fido PRONOM detection on file {path} "
+            _warn(f"fido PRONOM detection on file {path} "
                       f"failed with error '{stderr}'.")
         elif stdout.startswith("OK"):
             results = stdout.split('\n')
             if len(results) > 2: # .split('\n') returns a list of two items
-                self.log("Info: fido returned more than one PRONOM match "
+                _log("Info: fido returned more than one PRONOM match "
                          f"for file {path}. Selecting the first one.")
 
             # strip "OK" from the output
@@ -470,7 +494,7 @@ class Bestand:
                 begripBegrippenlijst=verwijzing,
             )
         else:
-            self.warn(f"fido failed to detect PRONOM ID of file {path}.")
+            _warn(f"fido failed to detect PRONOM ID of file {path}.")
 
         # can return None in case PRONOM detection fails and force == True
         return None
@@ -517,7 +541,7 @@ class Bestand:
             id_gegevens = IdentificatieGegevens(kenmerk.text, bron.text)
 
         if naam is None:
-            self.warn(f"informatieobject in {informatieobject_xml.name} "
+            _warn(f"informatieobject in {informatieobject_xml.name} "
                       "lacks a <naam> tag.")
             return None
         else:
@@ -538,8 +562,8 @@ class Bestand:
     @naam.setter
     def naam(self, val):
         if len(val) > MAX_NAAM_LENGTH:
-            self.warn(f"value '{val}' of element 'naam' "
-                      f"exceeds maximum length of {MAX_NAAM_LENGTH}")
+            _warn(f"value '{val}' of element 'naam' "
+                      f"exceeds maximum length of {MAX_NAAM_LENGTH}.")
         self._naam = val
 
     @property
@@ -559,7 +583,7 @@ class Bestand:
         elif validators.url(val):
             self._url = val
         else:
-            self.warn(f"URL {val} is malformed.")
+            _warn(f"URL {val} is malformed.")
 
     # Helper methods
     def _process_file(self, file_or_filename) -> TextIO:
@@ -581,29 +605,6 @@ class Bestand:
                 return file_or_filename
         else:
             raise TypeError("provided invalid file to Bestand()")
-
-    def warn(self, warning):
-        """Print warning, and exit if self.force is not set"""
-
-        orange = '\033[33m'
-        esc_end = '\033[0m'
-
-        warning = f"{orange}Warning: {warning} "
-        warning += "Continuing anyway." if self.force else "Exiting."
-        warning += esc_end
-
-        self.log(warning)
-        if not self.force:
-            sys.exit(-1)
-
-    def error(self, error):
-        """Print error and exit"""
-
-        red = '\033[31m'
-        esc_end = '\033[0m'
-
-        self.log(f"{red}Error: {error}{esc_end}")
-        sys.exit(-1)
 
 if __name__ == "__main__":
 
