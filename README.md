@@ -1,4 +1,8 @@
-<!-- see https://github.com/ArchiveBox/ArchiveBox. .wacz programs might also be useful -->
+<!-- For examples, see 
+1. https://github.com/ArchiveBox/ArchiveBox. 
+2. .wacz programs
+3. https://pypi.org/project/pycomplete/
+-->
 
 # Introduction #
 
