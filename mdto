@@ -690,5 +690,3 @@ if __name__ == "__main__":
         xml_declaration=True,
         short_empty_elements=False,
     )
-
-    Bestand("ccool", IdentificatieGegevens("2rjj", "corsa"), 123, None)
