@@ -45,9 +45,11 @@ _force, _quiet = False, False
 # Helper methods
 def _process_file(file_or_filename) -> TextIO:
     """
-    Return file-object in case input is already a file.
-    Otherwise, assume the argument is a path, and return
-    a new file object.
+    Return file-object if input is already a file.
+    Otherwise, assume the argument is a path, and convert
+    it to a new file-object.
+
+    Note: the returned file-objected is always in read-only mode
     """
 
     # filename?
