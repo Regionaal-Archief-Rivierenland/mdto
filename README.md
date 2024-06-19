@@ -144,6 +144,8 @@ Autocompletition werkt natuurlijk ook:
 
 ``` shell
 $ ./mdto.py kapvergunning.pdf --identificatiekenmerk 345c-4379 --identificatiebron Corsa --informatieobject infobj.xml | xmllint --schema MDTO-XML1.0.1.xsd --format
+```
+```xml
 <?xml version="1.0" encoding="utf-8"?>
 <MDTO xmlns="https://www.nationaalarchief.nl/mdto" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://www.nationaalarchief.nl/mdto https://www.nationaalarchief.nl/mdto/MDTO-XML1.0.1.xsd">
   <bestand>
