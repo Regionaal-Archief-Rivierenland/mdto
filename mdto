@@ -41,7 +41,6 @@ import validators
 MAX_NAAM_LENGTH = 80
 _force, _quiet = False, False
 
-
 # Helper methods
 def _process_file(file_or_filename) -> TextIO:
     """
@@ -349,6 +348,7 @@ class Bestand:
     
         root = ET.SubElement(mdto, "bestand")
 
+        # TODO: this might not be an iterable?
         for i in self.identificatie:
             root.append(i.to_xml("identificatie"))
 
@@ -519,7 +519,7 @@ def pronominfo(path: str) -> BegripGegevens:
     # can return None in case PRONOM detection fails and force == True
     return None
 
-def bestand_cli_wrapper(
+def create_bestand(
     infile: TextIO | str,
     identificatiekenmerken: List[str] | str,
     identificatiebronnen: List[str] | str,
@@ -538,10 +538,10 @@ def bestand_cli_wrapper(
     if multiple <identificatie> tags are desired. Otherwise, a single str suffices.
 
     Args:
-        infile (TextIO | str): the actual file the Bestand object should represent.
+        infile (TextIO | str): the file the Bestand object should represent. Can be a path or file-like object
         identificatiekenmerken (List[str] | str): str or list of str for <identificatieKenmerk> tags
         identificatiebronnen (List[str] | str): str or list of str for <identificatieBron> tags
-        informatieobject (TextIO | str): file path or file-like object that
+        informatieobject (TextIO | str): path or file-like object that
             represents an MDTO Informatieobject in XML form.
             Used to infer values for <isRepresentatieVan>.
         naam (str, optional): value of <naam>. Defaults to the basename of `infile`
@@ -553,7 +553,7 @@ def bestand_cli_wrapper(
         ```python
 
         with open('informatieobject_001.xml') as f:
-            bestand = bestand_cli_wrapper("vergunning.pdf", '34c5-4379-9f1a-5c378', 'Proza (DMS)', informatieobject=f)
+            bestand = create_bestand("vergunning.pdf", '34c5-4379-9f1a-5c378', 'Proza (DMS)', informatieobject=f)
             xml = bestand.to_xml()
         ```
     """
@@ -670,7 +670,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    bestand = bestand_cli_wrapper(
+    bestand = create_bestand(
         infile=args.infile,
         identificatiekenmerken=args.identificatiekenmerk,
         identificatiebronnen=args.identificatiebron,
