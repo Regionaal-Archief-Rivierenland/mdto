@@ -35,7 +35,8 @@ import validators
 #   - This way, the script becomes more useful, as it can also generate other .xml files
 # - [ ] write unit tests
 # - [ ] write setup.py script
-# - [ ] make a wrapper around Bestand
+# - [x] make a wrapper around Bestand
+# - [ ] Create an option to create Informatieobjecten _from_ existing XML files
 
 # globals
 MAX_NAAM_LENGTH = 80
@@ -94,7 +95,6 @@ def _error(error):
     _log(f"{red}Error: {error}{esc_end}")
     sys.exit(-1)
 
-
 @dataclass
 class IdentificatieGegevens:
     """MDTO identificatieGegevens class
@@ -144,23 +144,23 @@ class VerwijzingGegevens:
     verwijzingNaam: str
     verwijzingIdentificatie: IdentificatieGegevens = None
 
-    @property
-    def verwijzingNaam(self):
-        """Value of MDTO 'verwijzingNaam' tag.
+    # @property
+    # def verwijzingNaam(self):
+    #     """Value of MDTO 'verwijzingNaam' tag.
 
-        Valid values: 
-            any string of up to 80 characters in length
-        MDTO docs: 
-            https://www.nationaalarchief.nl/archiveren/mdto/verwijzingNaam
-        """
-        return self._verwijzingNaam
+    #     Valid values: 
+    #         any string of up to 80 characters in length
+    #     MDTO docs: 
+    #         https://www.nationaalarchief.nl/archiveren/mdto/verwijzingNaam
+    #     """
+    #     return self._verwijzingNaam
 
-    @verwijzingNaam.setter
-    def verwijzingNaam(self, val):
-        if len(val) > MAX_NAAM_LENGTH:
-            _warn(f"value '{val}' of element 'verwijzingNaam' "
-                  f"exceeds maximum length of {MAX_NAAM_LENGTH}.")
-        self._verwijzingNaam = val
+    # @verwijzingNaam.setter
+    # def verwijzingNaam(self, val):
+    #     if len(val) > MAX_NAAM_LENGTH:
+    #         _warn(f"value '{val}' of element 'verwijzingNaam' "
+    #               f"exceeds maximum length of {MAX_NAAM_LENGTH}.")
+    #     self._verwijzingNaam = val
 
     def to_xml(self, root: str) -> ET.Element:
         """Transform VerwijzingGegevens into XML tree
@@ -267,6 +267,7 @@ class ChecksumGegevens:
              <checksumWaarde>…</checksumWaarde>
              <checksumDatum>…</checksumDatum>
          </checksum>
+
          ```
 
         Returns:
@@ -285,13 +286,131 @@ class ChecksumGegevens:
 
         return root
 
+@dataclass
+class BeperkingGebruikGegevens:
+
+    # TODO: docstring
+    
+    beperkingGebruikType: BegripGegevens
+    beperkingGebruikNadereBeschrijving: str = None
+    # TODO: this can be a list
+    beperkingGebruikDocumentatie: VerwijzingGegevens = None
+    # TODO: maak een termijnGegevens dataclass
+    beperkingGebruikTermijn: str = None
+
+    def to_xml(self) -> ET.Element:
+        """Transform BeperkingGebruikGegevens into XML tree
+
+        Returns:
+            ET.Element: XML representation of BeperkingGebruikGegevens
+        """
+
+        root = ET.Element("beperkingGebruik")
+
+        root.append(self.beperkingGebruikType.to_xml("beperkingGebruikType"))
+        
+        nadereBeschrijving = ET.SubElement(root, "beperkingGebruikNadereBeschrijving")
+        nadereBeschrijving.text = self.beperkingGebruikNadereBeschrijving
+
+        root.append(self.beperkingGebruikDocumentatie.to_xml("beperkingGebruikDocumentatie"))
+        
+        # TODO: also add beperkingGebruikTermijn
+        
+        return root
+
+# TODO: this should be a subclass of a general object class
+@dataclass
+class Informatieobject:
+    """MDTO Informatieobject class.
+
+    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/informatieobject
+    
+    Example:
+    
+    ```python
+    # Maak informatieobject
+    informatieobject = Informatieobject(IdentificatieGegevens(…), naam="Kapvergunning", …)
+    
+    xml = informatieobject.to_xml()
+    with open("informatieobject.xml", 'w') as output_file:
+        xml.write(output_file, xml_declaration=True, short_empty_elements=False)
+    ```
+
+    Args:
+        identificatie (IdentificatieGegevens): Gegevens waarmee het object geïdentificeerd kan worden
+        naam (str): Een betekenisvolle aanduiding waaronder het object bekend is
+        waardering (VerwijzingGegevens): De waardering van het informatieobject volgens een selectielijst
+        archiefvormer (VerwijzingGegevens): De organisatie die verantwoordelijk is voor het opmaken en/of ontvangen van het informatieobject
+        beperkingGebruik (BeperkingGebruikGegevens): Een beperking die gesteld is aan het gebruik van het informatieobject
+        
+    """
+
+    identificatie: IdentificatieGegevens | List[IdentificatieGegevens]
+    naam: str
+    waardering: BegripGegevens
+    archiefvormer: VerwijzingGegevens | List[VerwijzingGegevens]
+    beperkingGebruik: BeperkingGebruikGegevens | List[BeperkingGebruikGegevens]
+    # TODO: add other elements
+
+    def to_xml(self) -> ET.ElementTree:
+        """
+        Transform Informatieobject into an XML tree with the following structure:
+
+        ```xml
+        <MDTO xmlns=…>
+            <informatieobject>
+                …
+            </informatieobject>
+        </MDTO>
+        ```
+
+        Returns:
+            ET.ElementTree: XML tree representing the Informatieobject object. This object can be written to a file by calling `.write()`.
+        """
+
+        mdto = ET.Element(
+            "MDTO",
+            attrib={
+                "xmlns": "https://www.nationaalarchief.nl/mdto",
+                "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                "xsi:schemaLocation": "https://www.nationaalarchief.nl/mdto https://www.nationaalarchief.nl/mdto/MDTO-XML1.0.1.xsd",
+            },
+        )
+    
+        root = ET.SubElement(mdto, "informatieobject")
+
+        # allow users to pass either a single IdentificatieGegevens object, or a list thereof
+        if isinstance(self.identificatie, IdentificatieGegevens):
+            self.identificatie = [self.identificatie]
+            
+        for i in self.identificatie:
+            root.append(i.to_xml("identificatie"))
+
+        root.append(self.waardering.to_xml("waardering"))
+        root.append(self.archiefvormer.to_xml("archiefvormer"))
+        
+        # allow users to pass either a single BeperkingGebruikGegevens object, or a list thereof
+        if isinstance(self.identificatie, BeperkingGebruikGegevens):
+            self.beperkingGebruik = [self.beperkingGebruik]
+
+        for b in self.beperkingGebruik:
+            root.append(b.to_xml())
+
+        # can you abstract this? this is now double
+        # on the other hand, formatting preferences should be handled by e.g. xmllint
+        tree = ET.ElementTree(mdto)
+        ET.indent(tree, space="    ")  # use 4 spaces as indentation
+
+        return tree
+
+    
 # see https://www.trueblade.com/blogs/news/python-3-10-new-dataclass-features
 @dataclass
 class Bestand:
     """MDTO Bestand class.
 
-    When creating Bestand XML files, it may be more convenient to call the
-    `bestand_cli_wrapper()` function, or to invoke this program as a CLI tool.
+    When creating Bestand XML files, it may be more easier to instead use the
+    `create_bestand()` convenience function, or to invoke this program as a CLI tool.
 
     MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/bestand
 
@@ -348,7 +467,9 @@ class Bestand:
     
         root = ET.SubElement(mdto, "bestand")
 
-        # TODO: this might not be an iterable?
+        if isinstance(self.identificatie, IdentificatieGegevens):
+            self.identificatie = [self.identificatie]
+            
         for i in self.identificatie:
             root.append(i.to_xml("identificatie"))
 
@@ -593,7 +714,7 @@ def create_bestand(
     return Bestand(naam, ids, omvang, bestandsformaat, checksum, isrepresentatievan, url)
 
 if __name__ == "__main__":
-
+    
     import argparse
 
     bb = '\033[1m'
