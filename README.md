@@ -92,7 +92,7 @@ informatieobject = Informatieobject(identificatie = informatieobject_id,
                  archiefvormer = VerwijzingGegevens("'s-Gravenhage"),
                  beperkingGebruik = beperkingGebruik)
                  
-# schrijf informatie object naar een bestand
+# schrijf informatieobject naar een bestand
 xml = informatieobject.to_xml()
 with open("informatieobject.xml", 'w') as output_file:
     xml.write(output_file, xml_declaration=True, short_empty_elements=False)
