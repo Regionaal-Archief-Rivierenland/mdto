@@ -104,7 +104,7 @@ In tegenstelling tot python's ingebouwde XML library [`xml.etree`](https://docs.
 
 ``` python-console
 >>> print(informatieobject)
-Informatieobject(identificatie=IdentificatieGegevens(identificatieKenmerk='Informatieobject-4661a-5a3526fh654ee', identificatieBron='Proza (OCW-DMS)'), naam='Verlenen kapvergunning Hooigracht 21 Den Haag', ... 
+Informatieobject(naam='Verlenen kapvergunning Hooigracht 21 Den Haag',  identificatie=IdentificatieGegevens(identificatieKenmerk='Informatieobject-4661a-5a3526fh654ee', identificatieBron='Proza (OCW-DMS)', ...)
 >>> informatieobject.naam = informatieobject.naam.upper() # waardes zijn modificeerbaar
 >>> print(informatieobject.naam)
 'VERLENEN KAPVERGUNNING HOOIGRACHT 21 DEN HAAG'
