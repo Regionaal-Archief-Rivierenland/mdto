@@ -174,12 +174,12 @@ De output van `mdto.py` kan naar een bestand worden geschreven via shell redirec
 # Shell redirection:
 $ ./mdto.py input.pdf ... > output_file.xml
 # Via de -o/--output flag:
-$ ./mdto.py input.pdf   --identificatiekenmerk 5678-abcd ... -o  output_file.xml
+$ ./mdto.py input.pdf --identificatiekenmerk 5678-abcd ... -o  output_file.xml
 ```
 
 Voor verdere gebruiksinstructies en een volledige lijst aan CLI opties, zie `mdto --help`:
 
-``` shell
+``` shellsession
 $ mdto --help
 usage: mdto.py [-h] --identificatiekenmerk KENMERK --identificatiebron BRON --informatieobject INFORMATIEOBJECT.xml
                [--output [OUTPUT.xml]] [--url URL] [--naam NAAM] [--quiet] [--force]
