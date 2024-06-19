@@ -133,12 +133,16 @@ Het resulterende XML bestand bevat vervolgens de correcte `<omvang>`, `<bestands
 
 `mdto.py` bevat docstrings, zodat teksteditors/IDEs je kunnen ondersteunen met documentatie popups en vensters. Handig als je even niet meer wat een MDTO element precies doet.
 
+[doc-popup.webm](https://github.com/Regionaal-Archief-Rivierenland/mdto/assets/10417027/de41c4e5-900d-48c3-b04b-57dc703e201e)
+
 Autocompletition werkt natuurlijk ook: 
+
+[autocompletion-cast.webm](https://github.com/Regionaal-Archief-Rivierenland/mdto/assets/10417027/da6ffff7-132e-481c-b3a0-fd1674fd5da7)
+
 
 # `mdto.py` als CLI programma
 
 `mdto.py` kan ook worden aangeroepen als commandline programma om MDTO Bestand-objecten mee te genereren. Dit kan handig zijn als je een hele batch aan Bestand XMLs moet genereren, of snel een test bestand wilt aanmaken. Enige nadeel is wel dat de bijhorende Informatieobject XML bestanden al moeten bestaan.
-
 
 `mdto.py` schrijft standaard naar STDOUT (i.e. je terminal). Dit omdat de output zo vervolgens doorgegeven kan worden aan tools zoals `xmllint`:
 
