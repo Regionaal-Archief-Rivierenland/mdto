@@ -1,4 +1,4 @@
-`mdto.py` helpt bij het maken van [MDTO](https://www.nationaalarchief.nl/archiveren/mdto) XML bestanden. Het programma kan op twee manieren worden ingezet; als python library, en als commandline interface (CLI) tool voor het genereren van [MDTO Bestand](https://www.nationaalarchief.nl/archiveren/mdto/metagegevensschema/attribuutspecificaties/klassen/bestand) objecten. 
+`mdto.py` helpt bij het maken van MDTO XML bestanden. Het programma kan op twee manieren worden ingezet; als python library, en als commandline interface (CLI) tool voor het genereren van [MDTO Bestand](https://www.nationaalarchief.nl/archiveren/mdto/metagegevensschema/attribuutspecificaties/klassen/bestand) objecten. 
 
 Op dit moment is `mdto.py` vooral nuttig om automatisch technische metagegevens mee te genereren, of wat binnen MDTO een Bestand object heet:
 
