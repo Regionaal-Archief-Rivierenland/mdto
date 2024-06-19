@@ -165,7 +165,7 @@ $ ./mdto.py kapvergunning.pdf --identificatiekenmerk 345c-4379 --identificatiebr
     ...
   </bestand>
 </MDTO>
-- validates # STDIN is valide XML!
+- validates # STDIN is valide XML volgens xmllint!
 ```
 
 De output van `mdto.py` kan naar een bestand worden geschreven via shell redirection, of via de `-o` flag:
