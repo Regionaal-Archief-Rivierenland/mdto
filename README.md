@@ -143,7 +143,7 @@ Autocompletition werkt natuurlijk ook:
 `mdto.py` schrijft standaard naar STDOUT (i.e. je terminal). Dit omdat de output zo vervolgens doorgegeven kan worden aan tools zoals `xmllint`:
 
 ``` shell
-$ ./mdto.py kapvergunning.pdf --identificatiekenmerk 345c-4379 --identificatiebron Corsa --informatieobject infobj.xml | xmllint --schema MDTO-XML1.0.1.xsd --format
+$ ./mdto.py kapvergunning.pdf --identificatiekenmerk 345c-4379 --identificatiebron Corsa --informatieobject infobj.xml | xmllint --schema MDTO-XML1.0.1.xsd --format -
 ```
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
