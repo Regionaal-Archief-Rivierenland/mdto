@@ -49,7 +49,7 @@ Om dit programma te gebruiken heb je het volgende nodig:
 
   * Python 3.11 of nieuwer
   * [fido](https://github.com/openpreserve/fido) (voor pronom detectie)
-  * De [validators python library](https://pypi.org/project/validators/) (voor het valideren van URLS)
+  * De [validators python library](https://pypi.org/project/validators/) (voor het valideren van URLs)
   
 De laatste twee afhankelijkheden kunnen bijv. via pip geinstalleerd worden:
 
