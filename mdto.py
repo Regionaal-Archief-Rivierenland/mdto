@@ -257,7 +257,7 @@ class ChecksumGegevens:
         self.checksumDatum = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
     def to_xml(self) -> ET.Element:
-        """Transform Bestand into XML tree with the following structure:
+        """Transform into XML tree with the following structure:
 
          ```xml
          <checksum>
