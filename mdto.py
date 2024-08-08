@@ -17,6 +17,7 @@ import validators
 
 # use this to generate the rest of the classes:
 #   - https://xsdata.readthedocs.io/en/latest/codegen/intro/
+# - [ ] Allow people to _either_ install fido through pip, or ass a CLI thing
 # - [ ] Convert self.error to native Raise calls?
 # - [x] ❗ make most classes into a dataclasses, using the @dataclass decorator
 #   - https://docs.python.org/3/library/dataclasses.html
