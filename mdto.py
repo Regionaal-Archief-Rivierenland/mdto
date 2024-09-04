@@ -495,7 +495,7 @@ class Informatieobject:
                 self.bevatOnderdeel = [self.bevatOnderdeel]
             for b in self.bevatOnderdeel:
                 root.append(b.to_xml("bevatOnderdeel"))
-        
+
         if self.aanvullendeMetagegevens:
             if isinstance(self.aanvullendeMetagegevens, VerwijzingGegevens):
                 self.aanvullendeMetagegevens = [self.aanvullendeMetagegevens]
