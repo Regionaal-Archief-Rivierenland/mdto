@@ -43,6 +43,7 @@ import validators
 MAX_NAAM_LENGTH = 80
 _force, _quiet = False, False
 
+
 # Helper methods
 def _process_file(file_or_filename) -> TextIO:
     """
@@ -66,7 +67,10 @@ def _process_file(file_or_filename) -> TextIO:
         else:
             return file_or_filename
     else:
-        raise TypeError(f"Expected file object or str, but got value of type {type(file_or_filename)}")
+        raise TypeError(
+            f"Expected file object or str, but got value of type {type(file_or_filename)}"
+        )
+
 
 def _log(m):
     if _quiet:
@@ -74,10 +78,11 @@ def _log(m):
     else:
         print(m, file=sys.stderr)
 
+
 def _warn(warning):
     """Log warning, and exit if force == False"""
-    orange = '\033[33m'
-    esc_end = '\033[0m'
+    orange = "\033[33m"
+    esc_end = "\033[0m"
 
     warning = f"{orange}Warning: {warning} "
     warning += "Continuing anyway." if _force else "Exiting."
@@ -87,20 +92,22 @@ def _warn(warning):
     if not _force:
         sys.exit(-1)
 
+
 def _error(error):
     """Log error and exit"""
 
-    red = '\033[31m'
-    esc_end = '\033[0m'
+    red = "\033[31m"
+    esc_end = "\033[0m"
 
     _log(f"{red}Error: {error}{esc_end}")
     sys.exit(-1)
+
 
 @dataclass
 class IdentificatieGegevens:
     """MDTO identificatieGegevens class
 
-    MDTO docs: 
+    MDTO docs:
         https://www.nationaalarchief.nl/archiveren/mdto/identificatieGegevens
 
     Args:
@@ -131,6 +138,7 @@ class IdentificatieGegevens:
 
         return root
 
+
 @dataclass
 class VerwijzingGegevens:
     """MDTO verwijzingGegevens class
@@ -149,9 +157,9 @@ class VerwijzingGegevens:
     # def verwijzingNaam(self):
     #     """Value of MDTO 'verwijzingNaam' tag.
 
-    #     Valid values: 
+    #     Valid values:
     #         any string of up to 80 characters in length
-    #     MDTO docs: 
+    #     MDTO docs:
     #         https://www.nationaalarchief.nl/archiveren/mdto/verwijzingNaam
     #     """
     #     return self._verwijzingNaam
@@ -181,8 +189,7 @@ class VerwijzingGegevens:
         if self.verwijzingIdentificatie:
             # append lxml element directly to tree,
             # and set name of the root element to 'verwijzingIdentificatie'
-            root.append(
-                self.verwijzingIdentificatie.to_xml("verwijzingIdentificatie"))
+            root.append(self.verwijzingIdentificatie.to_xml("verwijzingIdentificatie"))
 
         return root
 
@@ -243,11 +250,13 @@ class ChecksumGegevens:
         """
 
         verwijzing = VerwijzingGegevens(
-            verwijzingNaam='Begrippenlijst ChecksumAlgoritme MDTO')
+            verwijzingNaam="Begrippenlijst ChecksumAlgoritme MDTO"
+        )
 
         self.checksumAlgoritme = BegripGegevens(
             begripLabel=algorithm.upper().replace("SHA", "SHA-"),
-            begripBegrippenlijst=verwijzing)
+            begripBegrippenlijst=verwijzing,
+        )
 
         # file_digest() expects a file in binary mode, hence `infile.buffer.raw`
         # FIXME: this value is not the same on each call?
@@ -258,7 +267,7 @@ class ChecksumGegevens:
         self.checksumDatum = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
     def to_xml(self) -> ET.Element:
-        """Transform into XML tree with the following structure:
+        """Transform Bestand into XML tree with the following structure:
 
          ```xml
          <checksum>
@@ -287,11 +296,12 @@ class ChecksumGegevens:
 
         return root
 
+
 @dataclass
 class BeperkingGebruikGegevens:
 
     # TODO: docstring
-    
+
     beperkingGebruikType: BegripGegevens
     beperkingGebruikNadereBeschrijving: str = None
     # TODO: this can be a list
@@ -324,6 +334,7 @@ class BeperkingGebruikGegevens:
             beperkingGebruikTermijn.text = self.beperkingGebruikTermijn
 
         return root
+
 
 @dataclass
 class DekkingInTijdGegevens:
@@ -542,8 +553,10 @@ class Bestand:
         # check if name is of the right length
         # the getter and setter created weird errors
         if len(self.naam) > MAX_NAAM_LENGTH:
-            _warn(f"value '{self.naam}' of element 'naam' "
-                  f"exceeds maximum length of {MAX_NAAM_LENGTH}.")
+            _warn(
+                f"value '{self.naam}' of element 'naam' "
+                f"exceeds maximum length of {MAX_NAAM_LENGTH}."
+            )
 
     def to_xml(self) -> ET.ElementTree:
         """
@@ -569,12 +582,12 @@ class Bestand:
                 "xsi:schemaLocation": "https://www.nationaalarchief.nl/mdto https://www.nationaalarchief.nl/mdto/MDTO-XML1.0.1.xsd",
             },
         )
-    
+
         root = ET.SubElement(mdto, "bestand")
 
         if isinstance(self.identificatie, IdentificatieGegevens):
             self.identificatie = [self.identificatie]
-            
+
         for i in self.identificatie:
             root.append(i.to_xml("identificatie"))
 
@@ -624,54 +637,52 @@ class Bestand:
             _warn(f"URL '{val} is malformed.")
             self._URLBestand = val
 
+
 def detect_verwijzing(informatieobject: TextIO) -> VerwijzingGegevens:
-        """
-        A Bestand object must contain a reference to a corresponding informatieobject.
-        Specifically, it expects an <isRepresentatieVan> tag with the following children:
+    """
+    A Bestand object must contain a reference to a corresponding informatieobject.
+    Specifically, it expects an <isRepresentatieVan> tag with the following children:
 
-        1. <verwijzingNaam>: name of the informatieobject
-        2. <verwijzingIdentificatie> (optional): reference to the 
-        informatieobject's ID and source thereof
-        
-        This function infers these so-called 'VerwijzingGegevens' by
-        parsing the XML of the file `informatieobject`.
-        
-        MDTO Docs:
-            https://www.nationaalarchief.nl/archiveren/mdto/isRepresentatieVan
+    1. <verwijzingNaam>: name of the informatieobject
+    2. <verwijzingIdentificatie> (optional): reference to the
+    informatieobject's ID and source thereof
 
-        Args:
-            informatieobject (TextIO): XML file to infer VerwijzingGegevens from
+    This function infers these so-called 'VerwijzingGegevens' by
+    parsing the XML of the file `informatieobject`.
 
-        Returns:
-            `VerwijzingGegevens`, refering to the informatieobject
-        """
-        
-        id_gegevens = None
-        namespaces = {'mdto': 'https://www.nationaalarchief.nl/mdto'}
-        tree = ET.parse(informatieobject)
-        root = tree.getroot()
+    MDTO Docs:
+        https://www.nationaalarchief.nl/archiveren/mdto/isRepresentatieVan
 
-        id_xpath = ".//mdto:informatieobject/mdto:identificatie/"
+    Args:
+        informatieobject (TextIO): XML file to infer VerwijzingGegevens from
 
-        kenmerk = root.find(
-            id_xpath + 'mdto:identificatieKenmerk', namespaces=namespaces)
-        bron = root.find(
-            id_xpath + 'mdto:identificatieBron', namespaces=namespaces)
-        naam = root.find(".//mdto:informatieobject/mdto:naam", 
-                         namespaces=namespaces)
+    Returns:
+        `VerwijzingGegevens`, refering to the informatieobject
+    """
 
-        # bool(ET.Element) == False, according to the docs
-        # So use ¬p and ¬q == ¬(p or q)
-        if not (kenmerk is None or bron is None):
-            id_gegevens = IdentificatieGegevens(kenmerk.text, bron.text)
+    id_gegevens = None
+    namespaces = {"mdto": "https://www.nationaalarchief.nl/mdto"}
+    tree = ET.parse(informatieobject)
+    root = tree.getroot()
 
-        if naam is None:
-            # this ought to be really rare
-            _warn(f"informatieobject in {informatieobject_xml.name} "
-                      "lacks a <naam> tag.")
-            return None
-        else:
-            return VerwijzingGegevens(naam.text, id_gegevens)
+    id_xpath = ".//mdto:informatieobject/mdto:identificatie/"
+
+    kenmerk = root.find(id_xpath + "mdto:identificatieKenmerk", namespaces=namespaces)
+    bron = root.find(id_xpath + "mdto:identificatieBron", namespaces=namespaces)
+    naam = root.find(".//mdto:informatieobject/mdto:naam", namespaces=namespaces)
+
+    # bool(ET.Element) == False, according to the docs
+    # So use ¬p and ¬q == ¬(p or q)
+    if not (kenmerk is None or bron is None):
+        id_gegevens = IdentificatieGegevens(kenmerk.text, bron.text)
+
+    if naam is None:
+        # this ought to be really rare
+        _warn(f"informatieobject in {informatieobject_xml.name} " "lacks a <naam> tag.")
+        return None
+    else:
+        return VerwijzingGegevens(naam.text, id_gegevens)
+
 
 def pronominfo(path: str) -> BegripGegevens:
     # FIXME: format more properly
@@ -697,8 +708,10 @@ def pronominfo(path: str) -> BegripGegevens:
 
     # check if fido program exists
     if not shutil.which("fido"):
-        _error("'fido' not found. For installation instructions, "
-            "see https://github.com/openpreserve/fido#installation")
+        _error(
+            "'fido' not found. For installation instructions, "
+            "see https://github.com/openpreserve/fido#installation"
+        )
 
     cmd = [
         "fido",
@@ -723,13 +736,14 @@ def pronominfo(path: str) -> BegripGegevens:
 
     # check for errors
     if returncode != 0:
-        _warn(f"fido PRONOM detection on file {path} "
-                  f"failed with error '{stderr}'.")
+        _warn(f"fido PRONOM detection on file {path} " f"failed with error '{stderr}'.")
     elif stdout.startswith("OK"):
-        results = stdout.split('\n')
-        if len(results) > 2: # .split('\n') returns a list of two items
-            _log("Info: fido returned more than one PRONOM match "
-                     f"for file {path}. Selecting the first one.")
+        results = stdout.split("\n")
+        if len(results) > 2:  # .split('\n') returns a list of two items
+            _log(
+                "Info: fido returned more than one PRONOM match "
+                f"for file {path}. Selecting the first one."
+            )
 
         # strip "OK" from the output
         results = results[0].split(",")[1:]
@@ -745,6 +759,7 @@ def pronominfo(path: str) -> BegripGegevens:
     # can return None in case PRONOM detection fails and force == True
     return None
 
+
 def create_bestand(
     infile: TextIO | str,
     identificatiekenmerken: List[str] | str,
@@ -753,11 +768,11 @@ def create_bestand(
     naam: str = None,
     url: str = None,
     quiet: bool = False,
-    force: bool = False) -> Bestand:
-
+    force: bool = False,
+) -> Bestand:
     """
     Convenience function for creating Bestand objects. The difference between this function
-    and calling Bestand() directly is that this function infers most Bestand-related 
+    and calling Bestand() directly is that this function infers most Bestand-related
     information for you, based on the characteristics of `infile`.
 
     Supply a list of strings to `identificatiekenmerken` and `identificatiebronnen`
@@ -797,11 +812,15 @@ def create_bestand(
         identificatiebronnen = [identificatiebronnen]
 
     if len(identificatiekenmerken) != len(identificatiebronnen):
-        _error("number of 'identificatieKenmerk' tags differs from "
-                   "number of 'identificatieBron' tags")
+        _error(
+            "number of 'identificatieKenmerk' tags differs from "
+            "number of 'identificatieBron' tags"
+        )
 
-    ids = [IdentificatieGegevens(k, b)
-                for k, b in zip(identificatiekenmerken, identificatiebronnen)]
+    ids = [
+        IdentificatieGegevens(k, b)
+        for k, b in zip(identificatiekenmerken, identificatiebronnen)
+    ]
 
     if not naam:
         naam = os.path.basename(infile.name)
@@ -816,14 +835,17 @@ def create_bestand(
     informatieobject.close()
     infile.close()
 
-    return Bestand(naam, ids, omvang, bestandsformaat, checksum, isrepresentatievan, url)
+    return Bestand(
+        naam, ids, omvang, bestandsformaat, checksum, isrepresentatievan, url
+    )
+
 
 if __name__ == "__main__":
-    
+
     import argparse
 
-    bb = '\033[1m'
-    be = '\033[0m'
+    bb = "\033[1m"
+    be = "\033[0m"
     parser = argparse.ArgumentParser(
         description="Create a 'MDTO Bestand' .xml file based on FILE. "
         "The value of most XML tags will be inferred automatically, but some need to be specified manually.\n\n"
@@ -906,7 +928,6 @@ if __name__ == "__main__":
         quiet=args.quiet,
         force=args.force,
     )
-
 
     xml = bestand.to_xml()
     # encoding='unicode' is needed because ElementTree.write writes bytes by default
