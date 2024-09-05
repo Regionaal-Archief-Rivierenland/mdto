@@ -372,32 +372,49 @@ class Informatieobject:
     """MDTO Informatieobject class.
 
     MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/informatieobject
-    
+
     Example:
-    
+
     ```python
     # Maak informatieobject
     informatieobject = Informatieobject(IdentificatieGegevens(…), naam="Kapvergunning", …)
-    
+
     xml = informatieobject.to_xml()
     with open("informatieobject.xml", 'w') as output_file:
         xml.write(output_file, xml_declaration=True, short_empty_elements=False)
     ```
 
     Args:
-        identificatie (IdentificatieGegevens): Gegevens waarmee het object geïdentificeerd kan worden
-        naam (str): Een betekenisvolle aanduiding waaronder het object bekend is
-        waardering (VerwijzingGegevens): De waardering van het informatieobject volgens een selectielijst
-        archiefvormer (VerwijzingGegevens): De organisatie die verantwoordelijk is voor het opmaken en/of ontvangen van het informatieobject
-        beperkingGebruik (BeperkingGebruikGegevens): Een beperking die gesteld is aan het gebruik van het informatieobject
-        
+        identificatie (IdentificatieGegevens | List[IdentificatieGegevens]): Gegevens waarmee het object geïdentificeerd kan worden.
+        naam (str): Een betekenisvolle aanduiding waaronder het object bekend is.
+        aggregatieNiveau (BegripGegevens, optional): Het aggregatieniveau van het informatieobject.
+        classificatie (BegripGegevens, optional): De classificatie van het informatieobject.
+        trefwoord (str, optional): Een trefwoord dat het informatieobject beschrijft.
+        omschrijving (str, optional): Een omschrijving van het informatieobject.
+        dekkingInTijd (DekkingInTijdGegevens, optional): De tijdsperiode waarin het informatieobject geldig is.
+        event (EventGegevens, optional): Een gebeurtenis gerelateerd aan het informatieobject.
+        waardering (BegripGegevens): De waardering van het informatieobject volgens een selectielijst.
+        bevatOnderdeel (VerwijzingGegevens, optional): Verwijzing naar een ander onderdeel dat deel uitmaakt van het informatieobject.
+        aanvullendeMetagegevens (VerwijzingGegevens, optional): Verwijzing naar een ander onderdeel dat deel uitmaakt van het informatieobject.
+        archiefvormer (VerwijzingGegevens | List[VerwijzingGegevens]): De organisatie die verantwoordelijk is voor het opmaken en/of ontvangen van het informatieobject.
+        beperkingGebruik (BeperkingGebruikGegevens | List[BeperkingGebruikGegevens]): Een beperking die gesteld is aan het gebruik van het informatieobject.
+
     """
 
     identificatie: IdentificatieGegevens | List[IdentificatieGegevens]
     naam: str
-    waardering: BegripGegevens
-    archiefvormer: VerwijzingGegevens | List[VerwijzingGegevens]
-    beperkingGebruik: BeperkingGebruikGegevens | List[BeperkingGebruikGegevens]
+    aggregatieNiveau: BegripGegevens = None
+    classificatie: BegripGegevens = None
+    trefwoord: str = None
+    omschrijving: str = None
+    dekkingInTijd: DekkingInTijdGegevens = None
+    event: EventGegevens = None
+    waardering: BegripGegevens = None
+    bevatOnderdeel: VerwijzingGegevens | List[VerwijzingGegevens] = None
+    aanvullendeMetagegevens: VerwijzingGegevens | List[VerwijzingGegevens] = None
+    isOnderdeelVan: VerwijzingGegevens = None
+    archiefvormer: VerwijzingGegevens | List[VerwijzingGegevens] = None
+    beperkingGebruik: BeperkingGebruikGegevens | List[BeperkingGebruikGegevens] = None
     # TODO: add other elements
 
     def to_xml(self) -> ET.ElementTree:
@@ -424,21 +441,61 @@ class Informatieobject:
                 "xsi:schemaLocation": "https://www.nationaalarchief.nl/mdto https://www.nationaalarchief.nl/mdto/MDTO-XML1.0.1.xsd",
             },
         )
-    
+
         root = ET.SubElement(mdto, "informatieobject")
 
         # allow users to pass either a single IdentificatieGegevens object, or a list thereof
         if isinstance(self.identificatie, IdentificatieGegevens):
             self.identificatie = [self.identificatie]
-            
+
         for i in self.identificatie:
             root.append(i.to_xml("identificatie"))
 
+        if self.naam:
+            naam_elem = ET.SubElement(root, "naam")
+            naam_elem.text = self.naam
+
+        if self.aggregatieNiveau:
+            root.append(self.aggregatieNiveau.to_xml("aggregatieniveau"))
+
+        if self.classificatie:
+            root.append(self.classificatie.to_xml("classificatie"))
+
+        if self.trefwoord:
+            trefwoord_elem = ET.SubElement(root, "trefwoord")
+            trefwoord_elem.text = self.trefwoord
+
+        if self.omschrijving:
+            omschrijving_elem = ET.SubElement(root, "omschrijving")
+            omschrijving_elem.text = self.omschrijving
+
+        if self.dekkingInTijd:
+            root.append(self.dekkingInTijd.to_xml())
+
+        if self.event:
+            root.append(self.event.to_xml())
+
         root.append(self.waardering.to_xml("waardering"))
-        root.append(self.archiefvormer.to_xml("archiefvormer"))
+
+        if self.isOnderdeelVan:
+            root.append(self.isOnderdeelVan.to_xml("isOnderdeelVan"))
+
+        if self.bevatOnderdeel:
+            if isinstance(self.bevatOnderdeel, VerwijzingGegevens):
+                self.bevatOnderdeel = [self.bevatOnderdeel]
+            for b in self.bevatOnderdeel:
+                root.append(b.to_xml("bevatOnderdeel"))
         
+        if self.aanvullendeMetagegevens:
+            if isinstance(self.aanvullendeMetagegevens, VerwijzingGegevens):
+                self.aanvullendeMetagegevens = [self.aanvullendeMetagegevens]
+            for b in self.aanvullendeMetagegevens:
+                root.append(b.to_xml("aanvullendeMetagegevens"))
+
+        root.append(self.archiefvormer.to_xml("archiefvormer"))
+
         # allow users to pass either a single BeperkingGebruikGegevens object, or a list thereof
-        if isinstance(self.identificatie, BeperkingGebruikGegevens):
+        if isinstance(self.beperkingGebruik, BeperkingGebruikGegevens):
             self.beperkingGebruik = [self.beperkingGebruik]
 
         for b in self.beperkingGebruik:
@@ -451,7 +508,7 @@ class Informatieobject:
 
         return tree
 
-    
+
 # see https://www.trueblade.com/blogs/news/python-3-10-new-dataclass-features
 @dataclass
 class Bestand:
