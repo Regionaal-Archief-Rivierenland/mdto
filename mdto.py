@@ -325,6 +325,22 @@ class BeperkingGebruikGegevens:
 
         return root
 
+@dataclass
+class DekkingInTijdGegevens:
+    dekkingInTijdType: BegripGegevens
+    beginDatum: str
+    eindDatum: str
+
+    def to_xml(self) -> ET.Element:
+        root = ET.Element("dekkingInTijd")
+        root.append(self.dekkingInTijdType.to_xml("dekkingInTijdType"))
+        begin_datum_elem = ET.SubElement(root, "dekkingInTijdBegindatum")
+        begin_datum_elem.text = self.beginDatum
+        eind_datum_elem = ET.SubElement(root, "dekkingInTijdEinddatum")
+        eind_datum_elem.text = self.eindDatum
+        return root
+
+
 # TODO: this should be a subclass of a general object class
 @dataclass
 class Informatieobject:
