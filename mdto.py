@@ -341,6 +341,31 @@ class DekkingInTijdGegevens:
         return root
 
 
+@dataclass
+class EventGegevens:
+    eventType: BegripGegevens
+    eventTijd: str  # Aangepast naar str
+    eventVerantwoordelijkeActor: VerwijzingGegevens
+    eventResultaat: str
+
+    def to_xml(self) -> ET.Element:
+        root = ET.Element("event")
+
+        root.append(self.eventType.to_xml("eventType"))
+
+        event_tijd_elem = ET.SubElement(root, "eventTijd")
+        event_tijd_elem.text = self.eventTijd
+
+        root.append(
+            self.eventVerantwoordelijkeActor.to_xml("eventVerantwoordelijkeActor")
+        )
+
+        event_resultaat_elem = ET.SubElement(root, "eventResultaat")
+        event_resultaat_elem.text = self.eventResultaat
+
+        return root
+
+
 # TODO: this should be a subclass of a general object class
 @dataclass
 class Informatieobject:
