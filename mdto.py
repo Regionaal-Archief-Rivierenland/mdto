@@ -309,14 +309,20 @@ class BeperkingGebruikGegevens:
         root = ET.Element("beperkingGebruik")
 
         root.append(self.beperkingGebruikType.to_xml("beperkingGebruikType"))
-        
-        nadereBeschrijving = ET.SubElement(root, "beperkingGebruikNadereBeschrijving")
-        nadereBeschrijving.text = self.beperkingGebruikNadereBeschrijving
 
-        root.append(self.beperkingGebruikDocumentatie.to_xml("beperkingGebruikDocumentatie"))
-        
-        # TODO: also add beperkingGebruikTermijn
-        
+        if self.beperkingGebruikNadereBeschrijving:
+            nadereBeschrijving = ET.SubElement(
+                root, "beperkingGebruikNadereBeschrijving"
+            )
+            nadereBeschrijving.text = self.beperkingGebruikNadereBeschrijving
+        if self.beperkingGebruikDocumentatie:
+            root.append(
+                self.beperkingGebruikDocumentatie.to_xml("beperkingGebruikDocumentatie")
+            )
+        if self.beperkingGebruikTermijn:
+            beperkingGebruikTermijn = ET.SubElement(root, "beperkingGebruikTermijn")
+            beperkingGebruikTermijn.text = self.beperkingGebruikTermijn
+
         return root
 
 # TODO: this should be a subclass of a general object class
