@@ -678,7 +678,7 @@ def detect_verwijzing(informatieobject: TextIO) -> VerwijzingGegevens:
 
     if naam is None:
         # this ought to be really rare
-        _warn(f"informatieobject in {informatieobject_xml.name} " "lacks a <naam> tag.")
+        _warn(f"informatieobject in {informatieobject} " "lacks a <naam> tag.")
         return None
     else:
         return VerwijzingGegevens(naam.text, id_gegevens)
