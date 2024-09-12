@@ -462,9 +462,8 @@ class Informatieobject:
         for i in self.identificatie:
             root.append(i.to_xml("identificatie"))
 
-        if self.naam:
-            naam_elem = ET.SubElement(root, "naam")
-            naam_elem.text = self.naam
+        naam_elem = ET.SubElement(root, "naam")
+        naam_elem.text = self.naam
 
         if self.aggregatieNiveau:
             root.append(self.aggregatieNiveau.to_xml("aggregatieniveau"))
