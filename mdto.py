@@ -385,20 +385,20 @@ class Informatieobject:
 
     """
 
-    identificatie: IdentificatieGegevens | List[IdentificatieGegevens]
     naam: str
+    identificatie: IdentificatieGegevens | List[IdentificatieGegevens]
+    archiefvormer: VerwijzingGegevens | List[VerwijzingGegevens]
+    beperkingGebruik: BeperkingGebruikGegevens | List[BeperkingGebruikGegevens]
+    waardering: BegripGegevens
     aggregatieNiveau: BegripGegevens = None
     classificatie: BegripGegevens = None
     trefwoord: str = None
     omschrijving: str = None
     dekkingInTijd: DekkingInTijdGegevens = None
     event: EventGegevens = None
-    waardering: BegripGegevens = None
     bevatOnderdeel: VerwijzingGegevens | List[VerwijzingGegevens] = None
     aanvullendeMetagegevens: VerwijzingGegevens | List[VerwijzingGegevens] = None
     isOnderdeelVan: VerwijzingGegevens = None
-    archiefvormer: VerwijzingGegevens | List[VerwijzingGegevens] = None
-    beperkingGebruik: BeperkingGebruikGegevens | List[BeperkingGebruikGegevens] = None
     # TODO: add other elements
 
     def to_xml(self) -> ET.ElementTree:
