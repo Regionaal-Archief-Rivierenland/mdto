@@ -13,36 +13,9 @@ from dataclasses import dataclass
 # Make into an optional dependency?
 import validators
 
-# TODO
-
-# use this to generate the rest of the classes:
-#   - https://xsdata.readthedocs.io/en/latest/codegen/intro/
-# - [ ] Allow people to _either_ install fido through pip, or ass a CLI thing
-# - [ ] Convert self.error to native Raise calls?
-# - [x] ❗ make most classes into a dataclasses, using the @dataclass decorator
-#   - https://docs.python.org/3/library/dataclasses.html
-#   - for docstrings, see https://stackoverflow.com/questions/51125415/how-do-i-document-a-constructor-for-a-class-using-python-dataclasses
-#     - may be nice if some doc info from the .xsd would be visible in docstring
-# - [x] python library rfc3987: may seem useful, but too permissive
-# - [ ] Nederlandse (+engelse?) documentatie, en het script in het Engels
-#   - make a nice ascii cast!
-# - [ ] try siegfried instead of fido for speed?
-#   - https://openpreservation.org/blogs/siegfried-pronom-based-file-format-identification-tool/
-#   - also, fido lacks behind the pronom spec; .wacz are not recognized for example
-# - [ ] fish/bash autocomplete
-#   - i think the best approach is supply these as files on git
-#   - this might be useful https://github.com/kislyuk/argcomplete
-# - [ ] make a informatieobject subclass, and Object parent class
-#   - This way, the script becomes more useful, as it can also generate other .xml files
-# - [ ] write unit tests
-# - [ ] write setup.py script
-# - [x] make a wrapper around Bestand
-# - [ ] Create an option to create Informatieobjecten _from_ existing XML files
-
 # globals
 MAX_NAAM_LENGTH = 80
 _force, _quiet = False, False
-
 
 # Helper methods
 def _process_file(file_or_filename) -> TextIO:
