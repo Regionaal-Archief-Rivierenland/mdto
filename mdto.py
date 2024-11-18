@@ -735,7 +735,7 @@ def pronominfo(path: str) -> BegripGegevens:
 
     # check for errors
     if returncode != 0:
-        _warn(f"fido PRONOM detection on file {path} " f"failed with error '{stderr}'.")
+        _warn(f"fido PRONOM detection on file {path} failed with error '{stderr}'.")
     elif stdout.startswith("OK"):
         results = stdout.split("\n")
         if len(results) > 2:  # .split('\n') returns a list of two items
