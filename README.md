@@ -63,7 +63,7 @@ sudo pip install . # Windows gebruikers kunnen "sudo" hier weglaten
 ``` shell
 git clone https://github.com/Regionaal-Archief-Rivierenland/mdto.py
 cd mdto.py
-python3 -m venv mdto_env
+python -m venv mdto_env
 mdto_env\Scripts\activate
 pip install .
 ```
@@ -75,7 +75,7 @@ pip install .
 ``` shell
 git clone https://github.com/Regionaal-Archief-Rivierenland/mdto.py
 cd mdto.py/
-python3 -m venv mdto_env
+python -m venv mdto_env
 source mdto_env/bin/activate
 pip install .
 ```
