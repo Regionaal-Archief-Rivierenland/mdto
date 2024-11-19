@@ -59,6 +59,7 @@ sudo pip install . # Windows gebruikers kunnen "sudo" hier weglaten
 
 <details>
 <summary>Windows</summary>
+
 ``` shell
 git clone https://github.com/Regionaal-Archief-Rivierenland/mdto.py
 cd mdto.py
@@ -70,6 +71,7 @@ pip install .
 
 <details>
 <summary>Linux/WSL/*nix</summary>
+
 ``` shell
 git clone https://github.com/Regionaal-Archief-Rivierenland/mdto.py
 cd mdto.py/
