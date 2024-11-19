@@ -373,6 +373,8 @@ class RaadpleeglocatieGegevens:
             raadpleeglocatie_online_elem = ET.SubElement(root, "raadpleeglocatieOnline")
             raadpleeglocatie_online_elem.text = self.raadpleeglocatieOnline
 
+        return root
+
     @property
     def raadpleeglocatieOnline(self):
         """Value of MDTO `raadpleeglocatieOnline` tag.
