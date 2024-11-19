@@ -387,8 +387,9 @@ class RaadpleeglocatieGegevens:
 
     @raadpleeglocatieOnline.setter
     def raadpleeglocatieOnline(self, url: str):
-        # if url is not set, it's not None, but an empty "property" object
-        if isinstance(url, property): # check if empty
+        # if url is not set, (e.g. when calling RaadpleegLocatieGegevens() without arguments)
+        # it will not be None, but rather an empty "property" object
+        if isinstance(url, property) or url is None: # check if empty
             self._raadpleeglocatieOnline = None
         elif validators.url(url):
             self._raadpleeglocatieOnline = url
