@@ -597,15 +597,16 @@ class Bestand:
         return self._URLBestand
 
     @URLBestand.setter
-    def URLBestand(self, val):
-        # url can be non-existant
-        if val is None:
+    def URLBestand(self, url):
+        # if url is not set (e.g. when calling Bestand() without the URLBestand argument),
+        # it will not be None, but rather an empty "property" object
+        if isinstance(url, property) or url is None: # check if empty
             self._URLBestand = None
-        elif validators.url(val):
-            self._URLBestand = val
+        elif validators.url(url):
+            self._URLBestand = url
         else:
-            _warn(f"URL '{val} is malformed.")
-            self._URLBestand = val
+            _warn(f"URL '{url} is malformed.")
+            self._URLBestand = url
 
 
 def detect_verwijzing(informatieobject: TextIO) -> VerwijzingGegevens:
