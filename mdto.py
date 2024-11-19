@@ -348,6 +348,54 @@ class EventGegevens:
         return root
 
 
+@dataclass
+class RaadpleeglocatieGegevens:
+    """MDTO raadpleeglocatie class.
+
+    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/raadpleeglocatie
+
+    Args:
+        raadpleeglocatieFysiek (VerwijzingGegevens, optional): Fysieke raadpleeglocatie van het informatieobject
+        raadpleeglocatieOnline (str, optional): Online raadpleeglocatie van het informatieobject; moet een valide URL zijn
+    """
+
+    raadpleeglocatieFysiek: VerwijzingGegevens = None
+    raadpleeglocatieOnline: str = None
+
+    def to_xml(self):
+        root = ET.Element("raadpleeglocatie")
+
+        # In MDTO, raadpleeglocatie may have no children, strangely enough
+        if self.raadpleeglocatieFysiek:
+            root.append(self.raadpleeglocatieFysiek.to_xml('raadpleeglocatieFysiek'))
+
+        if self.raadpleeglocatieOnline:
+            raadpleeglocatie_online_elem = ET.SubElement(root, "raadpleeglocatieOnline")
+            raadpleeglocatie_online_elem.text = self.raadpleeglocatieOnline
+
+    @property
+    def raadpleeglocatieOnline(self):
+        """Value of MDTO `raadpleeglocatieOnline` tag.
+
+        Valid value: any RFC 3986 compliant URI
+
+        MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/raadpleeglocatieOnline
+        """
+        return self._raadpleeglocatieOnline
+
+    @raadpleeglocatieOnline.setter
+    def raadpleeglocatieOnline(self, url: str):
+        # if url is not set, (e.g. when calling RaadpleegLocatieGegevens() without arguments)
+        # it will not be None, but rather an empty "property" object
+        if isinstance(url, property) or url is None: # check if empty
+            self._raadpleeglocatieOnline = None
+        elif validators.url(url):
+            self._raadpleeglocatieOnline = url
+        else:
+            _warn(f"URL '{url}' is malformed.")
+            self._raadpleeglocatieOnline = url
+
+
 # TODO: this should be a subclass of a general object class
 @dataclass
 class Informatieobject:
