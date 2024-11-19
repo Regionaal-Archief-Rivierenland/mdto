@@ -1,6 +1,4 @@
-`mdto.py` helpt bij het maken van MDTO XML bestanden. Het programma kan op twee manieren worden ingezet; als python library, en als commandline interface (CLI) tool voor het genereren van [MDTO Bestand](https://www.nationaalarchief.nl/archiveren/mdto/metagegevensschema/attribuutspecificaties/klassen/bestand) objecten. 
-
-Op dit moment is `mdto.py` vooral nuttig om automatisch technische metagegevens mee te genereren, of wat binnen MDTO een Bestand object heet:
+`mdto.py` is een python library die helpt bij het maken van MDTO XML bestanden. Denk bijvoorbeeld aan het semi-automatisch genereren van technische metagegevens, of wat in MDTO het objectsoort 'Bestand' wordt genoemd:
 
 ``` xml
 <?xml version='1.0' encoding='UTF-8'?>
@@ -41,15 +39,15 @@ Op dit moment is `mdto.py` vooral nuttig om automatisch technische metagegevens 
 </MDTO>
 ```
 
-# Installatie 
+# Installatie
 
 ## Afhankelijkheden
 
-Om dit programma te gebruiken heb je het volgende nodig:
+Om `mdto.py` te gebruiken heb je het volgende nodig:
 
-  * Python 3.11 of nieuwer
-  * [fido](https://github.com/openpreserve/fido) (voor pronom detectie)
-  * De [validators python library](https://pypi.org/project/validators/) (voor het valideren van URLs)
+* Python 3.11 of nieuwer
+* [fido](https://github.com/openpreserve/fido) (voor pronom detectie)
+* De [validators python library](https://pypi.org/project/validators/) (voor het valideren van URLs)
   
 De laatste twee afhankelijkheden kunnen bijv. via pip geinstalleerd worden:
 
@@ -67,7 +65,7 @@ De `fido` binary moet in je `PATH` staan.
 
 ## XML bestanden bouwen
 
-Een van de doelstellingen van `mdto.py` is het versimpelen van het bouwen van MDTO XMLs via python. Om enkele voorbeelden te geven:
+De primaire doelstellingen van `mdto.py` is het versimpelen van het bouwen van MDTO XMLs via python. Om enkele voorbeelden te geven:
 
 ``` python
 from mdto import *
@@ -110,7 +108,7 @@ Informatieobject(naam='Verlenen kapvergunning Hooigracht 21 Den Haag',  identifi
 'VERLENEN KAPVERGUNNING HOOIGRACHT 21 DEN HAAG'
 ```
 
-Je kan op een vergelijkbare wijze Bestand objecten bouwen via de `Bestand()` class. Het is echter meestal simpeler om hiervoor de convience functie `create_bestand()` voor te gebruiken, omdat deze veel gegevens, zoals PRONOM informatie en checksums, automatisch voor je aanmaakt:
+Je kan op een vergelijkbare wijze Bestand objecten bouwen via de `Bestand()` class. Het is vaak echter simpeler om hiervoor de _convience_ functie `create_bestand()` te gebruiken, omdat deze veel gegevens, zoals PRONOM informatie en checksums, automatisch voor je aanmaakt:
 
 
 ```python
@@ -127,7 +125,7 @@ with open("bestand.xml", 'w') as output_file:
     xml.write(output_file, xml_declaration=True, short_empty_elements=False)
 ```
 
-Het resulterende XML bestand bevat vervolgens de correcte `<omvang>`, `<bestandsformaat>`, `<checksum>` , en `<isRepresentatieVan>` tags. `<URLBestand>` tags kunnen ook worden aangemaakt worden via de optionele `url=` parameter van `create_bestand()`. URLS worden automatisch gevalideerd via de [validators python library](https://pypi.org/project/validators/).
+Het resulterende XML bestand bevat vervolgens de correcte `<omvang>`, `<bestandsformaat>`, `<checksum>` , en `<isRepresentatieVan>` tags. `<URLBestand>` tags kunnen ook worden aangemaakt worden via de optionele `url=` parameter van `create_bestand()`. URLs worden automatisch gevalideerd via de [validators python library](https://pypi.org/project/validators/).
 
 ## Autocompletion & documentatie in je teksteditor/IDE
 
@@ -139,77 +137,4 @@ Autocompletition werkt natuurlijk ook:
 
 [autocompletion-cast.webm](https://github.com/Regionaal-Archief-Rivierenland/mdto/assets/10417027/da6ffff7-132e-481c-b3a0-fd1674fd5da7)
 
-
-# `mdto.py` als CLI programma
-
-`mdto.py` kan ook worden aangeroepen als commandline programma om MDTO Bestand-objecten mee te genereren. Dit kan handig zijn als je een hele batch aan Bestand XMLs moet genereren, of snel een test bestand wilt aanmaken. Enige nadeel is wel dat de bijhorende Informatieobject XML bestanden al moeten bestaan.
-
-`mdto.py` schrijft standaard naar STDOUT (i.e. je terminal). Dit omdat de output zo vervolgens doorgegeven kan worden aan tools zoals `xmllint`:
-
-``` shell
-$ ./mdto.py kapvergunning.pdf --identificatiekenmerk 345c-4379 --identificatiebron Corsa --informatieobject infobj.xml | xmllint --schema MDTO-XML1.0.1.xsd --format -
-```
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<MDTO xmlns="https://www.nationaalarchief.nl/mdto" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://www.nationaalarchief.nl/mdto https://www.nationaalarchief.nl/mdto/MDTO-XML1.0.1.xsd">
-  <bestand>
-    <identificatie>
-      <identificatieKenmerk>345c-4379</identificatieKenmerk>
-      <identificatieBron>Corsa</identificatieBron>
-    </identificatie>
-    <naam>kapvergunning.pdf</naam>
-    <omvang>243768</omvang>
-    <bestandsformaat>
-      <begripLabel>Acrobat PDF 1.5 - Portable Document Format</begripLabel>
-      <begripCode>fmt/19</begripCode>
-      <begripBegrippenlijst>
-        <verwijzingNaam>PRONOM-register</verwijzingNaam>
-      </begripBegrippenlijst>
-    </bestandsformaat>
-    ...
-  </bestand>
-</MDTO>
-- validates # STDIN is valide XML volgens xmllint!
-```
-
-De output van `mdto.py` kan naar een bestand worden geschreven via shell redirection, of via de `-o` flag:
-
-``` shell
-# Shell redirection:
-$ ./mdto.py input.pdf ... > output_file.xml
-# Via de -o/--output flag:
-$ ./mdto.py input.pdf --identificatiekenmerk 5678-abcd ... -o output_file.xml
-```
-
-Voor verdere gebruiksinstructies en een volledige lijst aan CLI opties, zie `mdto --help`:
-
-``` shellsession
-$ mdto --help
-usage: mdto.py [-h] --identificatiekenmerk KENMERK --identificatiebron BRON --informatieobject INFORMATIEOBJECT.xml
-               [--output [OUTPUT.xml]] [--url URL] [--naam NAAM] [--quiet] [--force]
-               FILE
-
-Create a 'MDTO Bestand' .xml file based on FILE. The value of most XML tags will be inferred automatically, but some need to be specified manually.
-
-Example: mdto img001.jpg --identificatiekenmerk 34c5-43a --identificatiebron "Corsa (DMS)" --informatieobject 103.xml
-
-positional arguments:
-  FILE                  file for which a MDTO Bestand .xml file should be generated
-
-options:
-  -h, --help            show this help message and exit
-  --identificatiekenmerk KENMERK, -k KENMERK
-                        value of <identificatieKenmerk>. Can be specified multiple times
-  --identificatiebron BRON, -b BRON
-                        value of <identificatieBron>. Can be specified multiple times
-  --informatieobject INFORMATIEOBJECT.xml, -O INFORMATIEOBJECT.xml
-                        path to corresponding informatieobject. Used to infer values of <isRepresentatieVan>
-  --output [OUTPUT.xml], -o [OUTPUT.xml]
-                        file to write to (default: print to stdout)
-  --url URL, -u URL     value of <URLBestand>. Needs to be a RFC 3986 compliant URI
-  --naam NAAM, -n NAAM  override <naam> with custom value
-  --quiet, -q           silence non-fatal warnings
-  --force, -f           do not exit when a tag's value conflicts with the MDTO spec. Might produce non-compliant files
-
-For more information, see https://www.nationaalarchief.nl/archiveren/mdto/bestand
-```
+<!-- TODO: sectie/link naar het gebruik van mdto.py (of: het toekomstige programma 'bestand') in een commandline omgeving -->
