@@ -1,5 +1,3 @@
-#!/bin/python
-
 import os
 import shutil
 import sys
@@ -433,21 +431,20 @@ class Informatieobject:
 
     """
 
-    identificatie: IdentificatieGegevens | List[IdentificatieGegevens]
     naam: str
+    identificatie: IdentificatieGegevens | List[IdentificatieGegevens]
+    archiefvormer: VerwijzingGegevens | List[VerwijzingGegevens]
+    beperkingGebruik: BeperkingGebruikGegevens | List[BeperkingGebruikGegevens]
+    waardering: BegripGegevens
     aggregatieNiveau: BegripGegevens = None
     classificatie: BegripGegevens = None
     trefwoord: str = None
     omschrijving: str = None
     dekkingInTijd: DekkingInTijdGegevens = None
     event: EventGegevens = None
-    waardering: BegripGegevens = None
     bevatOnderdeel: VerwijzingGegevens | List[VerwijzingGegevens] = None
     aanvullendeMetagegevens: VerwijzingGegevens | List[VerwijzingGegevens] = None
     isOnderdeelVan: VerwijzingGegevens = None
-    archiefvormer: VerwijzingGegevens | List[VerwijzingGegevens] = None
-    beperkingGebruik: BeperkingGebruikGegevens | List[BeperkingGebruikGegevens] = None
-    raadpleeglocatie: RaadpleeglocatieGegevens = None
     # TODO: add other elements
 
     def to_xml(self) -> ET.ElementTree:
@@ -648,15 +645,16 @@ class Bestand:
         return self._URLBestand
 
     @URLBestand.setter
-    def URLBestand(self, val):
-        # url can be non-existant
-        if val is None:
+    def URLBestand(self, url):
+        # if url is not set (e.g. when calling Bestand() without the URLBestand argument),
+        # it will not be None, but rather an empty "property" object
+        if isinstance(url, property) or url is None: # check if empty
             self._URLBestand = None
-        elif validators.url(val):
-            self._URLBestand = val
+        elif validators.url(url):
+            self._URLBestand = url
         else:
-            _warn(f"URL '{val} is malformed.")
-            self._URLBestand = val
+            _warn(f"URL '{url} is malformed.")
+            self._URLBestand = url
 
 
 def detect_verwijzing(informatieobject: TextIO) -> VerwijzingGegevens:
@@ -698,9 +696,7 @@ def detect_verwijzing(informatieobject: TextIO) -> VerwijzingGegevens:
         id_gegevens = IdentificatieGegevens(kenmerk.text, bron.text)
 
     if naam is None:
-        # this ought to be really rare
-        _warn(f"informatieobject in {informatieobject} " "lacks a <naam> tag.")
-        return None
+        _error(f"informatieobject in {informatieobject} " "lacks a <naam> tag.")
     else:
         return VerwijzingGegevens(naam.text, id_gegevens)
 
@@ -858,105 +854,4 @@ def create_bestand(
 
     return Bestand(
         naam, ids, omvang, bestandsformaat, checksum, isrepresentatievan, url
-    )
-
-
-if __name__ == "__main__":
-
-    import argparse
-
-    bb = "\033[1m"
-    be = "\033[0m"
-    parser = argparse.ArgumentParser(
-        description="Create a 'MDTO Bestand' .xml file based on FILE. "
-        "The value of most XML tags will be inferred automatically, but some need to be specified manually.\n\n"
-        f'{bb}Example:{be} mdto img001.jpg --identificatiekenmerk 34c5-43a --identificatiebron "Corsa (DMS)" --informatieobject 103.xml',
-        formatter_class=argparse.RawTextHelpFormatter,
-        epilog="For more information, see https://www.nationaalarchief.nl/archiveren/mdto/bestand",
-    )
-
-    parser.add_argument(
-        "infile",
-        metavar="FILE",
-        type=argparse.FileType("r"),
-        help="file for which a MDTO Bestand .xml file should be generated",
-    )
-    parser.add_argument(
-        "--identificatiekenmerk",
-        "-k",
-        metavar="KENMERK",
-        required=True,
-        action="append",
-        help="value of <identificatieKenmerk>. Can be specified multiple times",
-    )
-    parser.add_argument(
-        "--identificatiebron",
-        "-b",
-        metavar="BRON",
-        required=True,
-        action="append",
-        help="value of <identificatieBron>. Can be specified multiple times",
-    )
-    parser.add_argument(
-        "--informatieobject",
-        "-O",
-        metavar="INFORMATIEOBJECT.xml",
-        required=True,
-        type=argparse.FileType("r"),
-        help="path to corresponding informatieobject. "
-        "Used to infer values of <isRepresentatieVan>",
-    )
-
-    # optionals
-    # nargs='?' means 'use value of default when nothing given'
-    parser.add_argument(
-        "--output",
-        "-o",
-        metavar="OUTPUT.xml",
-        nargs="?",
-        type=argparse.FileType("w"),
-        default=sys.stdout,
-        help="file to write to (default: print to stdout)",
-    )
-    parser.add_argument(
-        "--url",
-        "-u",
-        required=False,
-        help="value of <URLBestand>. Needs to be a RFC 3986 compliant URI",
-    )
-    parser.add_argument("--naam", "-n", help="override <naam> with custom value")
-    parser.add_argument(
-        "--quiet", "-q", action="store_true", help="silence non-fatal warnings"
-    )
-    parser.add_argument(
-        "--force",
-        "-f",
-        action="store_true",
-        required=False,
-        help="do not exit when a tag's value conflicts with the MDTO spec. "
-        "Might produce non-compliant files",
-    )
-
-    args = parser.parse_args()
-
-    bestand = create_bestand(
-        infile=args.infile,
-        identificatiekenmerken=args.identificatiekenmerk,
-        identificatiebronnen=args.identificatiebron,
-        informatieobject=args.informatieobject,
-        naam=args.naam,
-        url=args.url,
-        quiet=args.quiet,
-        force=args.force,
-    )
-
-    xml = bestand.to_xml()
-    # encoding='unicode' is needed because ElementTree.write writes bytes by default
-    # And writing to bytes to stdout won't work, apperently
-    # www.stackoverflow.com/questions/47554882/elementtree-write-function-does-not-write-to-standard-out
-    xml.write(
-        args.output,
-        encoding="unicode",
-        xml_declaration=True,
-        short_empty_elements=False,
     )
