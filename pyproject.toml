@@ -1,0 +1,30 @@
+[project]
+name = "mdto.py"
+version = "0.0.1"
+authors = [
+  { name="Rijnder Wever", email="rwever@rarivierland.nl"},
+  { name="Wilmar van Ommeren", email="w.van.ommeren@zeeuwsarchief.nl"},
+]
+license = { file = "LICENSE"}
+description = "Library voor het genereren van MDTO XML bestanden"
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["MDTO", "archiving"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "validators",
+    "opf-fido",
+]
+
+[project.urls]
+Homepage = "https://github.com/Regionaal-Archief-Rivierenland/mdto.py"
+Issues = "https://github.com/Regionaal-Archief-Rivierenland/mdto.py/issues"
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"

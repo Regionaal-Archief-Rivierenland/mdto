@@ -43,23 +43,43 @@
 
 ## Afhankelijkheden
 
-Om `mdto.py` te gebruiken heb je het volgende nodig:
 
-* Python 3.11 of nieuwer
-* [fido](https://github.com/openpreserve/fido) (voor pronom detectie)
-* De [validators python library](https://pypi.org/project/validators/) (voor het valideren van URLs)
-  
-De laatste twee afhankelijkheden kunnen bijv. via pip geinstalleerd worden:
+* Python 3.11 of nieuwer.
+* Sommige functies van `mdto.py` werken alleen als het programma `fido` in je `PATH` staat. Als je de instructies hieronder volgt gebeurd dit automatisch.
 
-```shell
-pip install opf-fido validators
+## Systeem-brede installatie
+
+``` shell
+git clone https://github.com/Regionaal-Archief-Rivierenland/mdto.py
+cd mdto.py
+sudo pip install . # Windows gebruikers kunnen "sudo" hier weglaten
 ```
 
-De `fido` binary moet in je `PATH` staan.
+## Binnen een virtual environment
 
-## Installatie van `mdto.py`
+<details>
+<summary>Windows</summary>
 
-**TODO**
+``` shell
+git clone https://github.com/Regionaal-Archief-Rivierenland/mdto.py
+cd mdto.py
+python -m venv mdto_env
+mdto_env\Scripts\activate
+pip install .
+```
+</details>
+
+<details>
+<summary>Linux/WSL/*nix</summary>
+
+``` shell
+git clone https://github.com/Regionaal-Archief-Rivierenland/mdto.py
+cd mdto.py/
+python -m venv mdto_env
+source mdto_env/bin/activate
+pip install .
+```
+</details>
 
 # `mdto.py` als python library
 
