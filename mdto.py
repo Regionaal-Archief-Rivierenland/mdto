@@ -114,7 +114,7 @@ class IdentificatieGegevens:
 class VerwijzingGegevens:
     """MDTO verwijzingGegevens class
 
-    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/verwijzingGegevens
+    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/verwijzingsGegevens
 
     Args:
         verwijzingNaam (str): De naam van het object waarnaar verwezen wordt
