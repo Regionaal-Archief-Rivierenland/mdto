@@ -45,7 +45,7 @@
 
 
 * Python 3.11 of nieuwer.
-* `mdto.py` werkt alleen als het programma `fido` in je `PATH` staat. Als je de instructies hieronder volgt gebeurd dit automatisch.
+* Sommige functies van `mdto.py` werken alleen als het programma `fido` in je `PATH` staat. Als je de instructies hieronder volgt gebeurd dit automatisch.
 
 ## Systeem-brede installatie
 
