@@ -471,19 +471,20 @@ class Informatieobject:
     ```
 
     Args:
-        identificatie (IdentificatieGegevens | List[IdentificatieGegevens]): Gegevens waarmee het object geïdentificeerd kan worden
         naam (str): Betekenisvolle aanduiding waaronder het object bekend is
+        identificatie (IdentificatieGegevens | List[IdentificatieGegevens]): Gegevens waarmee het object geïdentificeerd kan worden
+        archiefvormer (VerwijzingGegevens | List[VerwijzingGegevens]): Organisatie die verantwoordelijk is voor het opmaken en/of ontvangen van het informatieobject
+        beperkingGebruik (BeperkingGebruikGegevens | List[BeperkingGebruikGegevens]): Beperking die gesteld is aan het gebruik van het informatieobject
+        waardering (BegripGegevens): Waardering van het informatieobject volgens een selectielijst
         aggregatieNiveau (BegripGegevens, optional): Aggregatieniveau van het informatieobject
         classificatie (BegripGegevens, optional): Classificatie van het informatieobject
         trefwoord (str, optional): Trefwoord dat het informatieobject beschrijft
         omschrijving (str, optional): Omschrijving van het informatieobject
         dekkingInTijd (DekkingInTijdGegevens, optional): Periode waarop het informatieobject betrekking heeft
         event (EventGegevens, optional): Gebeurtenis gerelateerd aan het informatieobject
-        waardering (BegripGegevens): Waardering van het informatieobject volgens een selectielijst
-        bevatOnderdeel (VerwijzingGegevens, optional): Verwijzing naar een ander onderdeel dat deel uitmaakt van het informatieobject.
+        bevatOnderdeel (VerwijzingGegevens, optional): Verwijzing naar een ander onderdeel dat deel uitmaakt van het informatieobject
         aanvullendeMetagegevens (VerwijzingGegevens, optional): Verwijzing naar een bestand dat aanvullende (domeinspecifieke) metagegevens over het informatieobject bevat
-        archiefvormer (VerwijzingGegevens | List[VerwijzingGegevens]): Organisatie die verantwoordelijk is voor het opmaken en/of ontvangen van het informatieobject
-        beperkingGebruik (BeperkingGebruikGegevens | List[BeperkingGebruikGegevens]): Beperking die gesteld is aan het gebruik van het informatieobject
+        isOnderdeelVan (VerwijzingGegevens, optional): Bovenliggende aggregatie waar dit informatieobject onderdeel van is
 
     """
 
