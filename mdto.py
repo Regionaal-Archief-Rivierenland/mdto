@@ -420,7 +420,7 @@ class RaadpleeglocatieGegevens:
     def to_xml(self):
         root = ET.Element("raadpleeglocatie")
 
-        # In MDTO, raadpleeglocatie may have no children, strangely enough
+        # raadpleeglocatie may have no children, strangely enough
         if self.raadpleeglocatieFysiek:
             root.append(self.raadpleeglocatieFysiek.to_xml('raadpleeglocatieFysiek'))
 
