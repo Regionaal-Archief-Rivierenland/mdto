@@ -479,7 +479,7 @@ class Informatieobject:
         waardering (BegripGegevens): Waardering van het informatieobject volgens een selectielijst
         aggregatieNiveau (BegripGegevens, optional): Aggregatieniveau van het informatieobject
         classificatie (BegripGegevens, optional): Classificatie van het informatieobject
-        trefwoord (str, optional): Trefwoord dat het informatieobject beschrijft
+        trefwoord (str | List[str], optional): Trefwoord dat het informatieobject beschrijft
         omschrijving (str, optional): Omschrijving van het informatieobject
         dekkingInTijd (DekkingInTijdGegevens, optional): Periode waarop het informatieobject betrekking heeft
         event (EventGegevens, optional): Gebeurtenis gerelateerd aan het informatieobject
@@ -496,7 +496,7 @@ class Informatieobject:
     waardering: BegripGegevens
     aggregatieNiveau: BegripGegevens = None
     classificatie: BegripGegevens = None
-    trefwoord: str = None
+    trefwoord: str | List[str] = None
     omschrijving: str = None
     dekkingInTijd: DekkingInTijdGegevens = None
     event: EventGegevens = None
@@ -549,8 +549,13 @@ class Informatieobject:
             root.append(self.classificatie.to_xml("classificatie"))
 
         if self.trefwoord:
-            trefwoord_elem = ET.SubElement(root, "trefwoord")
-            trefwoord_elem.text = self.trefwoord
+            # allow users to pass either a single trefwoord, or a list thereof
+            if isinstance(self.trefwoord, str):
+                self.trefwoord = [self.trefwoord]
+
+            for t in self.trefwoord:
+                trefwoord = ET.SubElement(root, "trefwoord")
+                trefwoord.text = t
 
         if self.omschrijving:
             omschrijving_elem = ET.SubElement(root, "omschrijving")
