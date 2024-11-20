@@ -436,7 +436,8 @@ class RaadpleeglocatieGegevens:
 
         Valid value: any RFC 3986 compliant URI
 
-        MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/raadpleeglocatieOnline
+        MDTO docs:
+            https://www.nationaalarchief.nl/archiveren/mdto/raadpleeglocatieOnline
         """
         return self._raadpleeglocatieOnline
 
