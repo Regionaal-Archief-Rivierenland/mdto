@@ -464,7 +464,6 @@ class Informatieobject:
     Example:
 
     ```python
-    # Maak informatieobject
     informatieobject = Informatieobject(IdentificatieGegevens(…), naam="Kapvergunning", …)
 
     xml = informatieobject.to_xml()
