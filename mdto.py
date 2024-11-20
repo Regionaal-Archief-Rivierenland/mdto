@@ -377,24 +377,27 @@ class EventGegevens:
     """
 
     eventType: BegripGegevens
-    eventTijd: str  # Aangepast naar str
-    eventVerantwoordelijkeActor: VerwijzingGegevens
-    eventResultaat: str
+    eventTijd: str = None
+    eventVerantwoordelijkeActor: VerwijzingGegevens = None
+    eventResultaat: str = None
 
     def to_xml(self) -> ET.Element:
         root = ET.Element("event")
 
         root.append(self.eventType.to_xml("eventType"))
 
-        event_tijd_elem = ET.SubElement(root, "eventTijd")
-        event_tijd_elem.text = self.eventTijd
+        if self.eventTijd:
+            event_tijd_elem = ET.SubElement(root, "eventTijd")
+            event_tijd_elem.text = self.eventTijd
 
-        root.append(
-            self.eventVerantwoordelijkeActor.to_xml("eventVerantwoordelijkeActor")
-        )
+        if self.eventVerantwoordelijkeActor:
+            root.append(
+                self.eventVerantwoordelijkeActor.to_xml("eventVerantwoordelijkeActor")
+            )
 
-        event_resultaat_elem = ET.SubElement(root, "eventResultaat")
-        event_resultaat_elem.text = self.eventResultaat
+        if self.eventResultaat:
+            event_resultaat_elem = ET.SubElement(root, "eventResultaat")
+            event_resultaat_elem.text = self.eventResultaat
 
         return root
 
