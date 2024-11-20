@@ -345,15 +345,20 @@ class DekkingInTijdGegevens:
 
     dekkingInTijdType: BegripGegevens
     beginDatum: str
-    eindDatum: str
+    eindDatum: str = None
 
     def to_xml(self) -> ET.Element:
         root = ET.Element("dekkingInTijd")
+
         root.append(self.dekkingInTijdType.to_xml("dekkingInTijdType"))
+
         begin_datum_elem = ET.SubElement(root, "dekkingInTijdBegindatum")
         begin_datum_elem.text = self.beginDatum
-        eind_datum_elem = ET.SubElement(root, "dekkingInTijdEinddatum")
-        eind_datum_elem.text = self.eindDatum
+
+        if self.eindDatum:
+            eind_datum_elem = ET.SubElement(root, "dekkingInTijdEinddatum")
+            eind_datum_elem.text = self.eindDatum
+
         return root
 
 
