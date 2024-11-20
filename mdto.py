@@ -76,7 +76,7 @@ def _error(error):
 
 @dataclass
 class IdentificatieGegevens:
-    """MDTO identificatieGegevens class
+    """MDTO identificatieGegevens class.
 
     MDTO docs:
         https://www.nationaalarchief.nl/archiveren/mdto/identificatieGegevens
@@ -112,13 +112,14 @@ class IdentificatieGegevens:
 
 @dataclass
 class VerwijzingGegevens:
-    """MDTO verwijzingGegevens class
+    """MDTO verwijzingGegevens class.
 
-    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/verwijzingsGegevens
+    MDTO docs:
+        https://www.nationaalarchief.nl/archiveren/mdto/verwijzingsGegevens
 
     Args:
-        verwijzingNaam (str): De naam van het object waarnaar verwezen wordt
-        verwijzingIdentificatie (IdentificatieGegevens, optional): De identificatie van het object waarnaar verwezen wordt
+        verwijzingNaam (str): Naam van het object waarnaar verwezen wordt
+        verwijzingIdentificatie (IdentificatieGegevens, optional): Identificatie van het object waarnaar verwezen wordt
     """
 
     verwijzingNaam: str
@@ -143,7 +144,7 @@ class VerwijzingGegevens:
     #     self._verwijzingNaam = val
 
     def to_xml(self, root: str) -> ET.Element:
-        """Transform VerwijzingGegevens into XML tree
+        """Transform VerwijzingGegevens into XML tree.
 
         Args:
             root (str): name of the new root tag
@@ -167,9 +168,10 @@ class VerwijzingGegevens:
 
 @dataclass
 class BegripGegevens:
-    """MDTO begripGegevens class
+    """MDTO begripGegevens class.
 
-    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/begripGegevens
+    MDTO docs:
+        https://www.nationaalarchief.nl/archiveren/mdto/begripGegevens
 
     Args:
         begripLabel (str): De tekstweergave van het begrip dat is toegekend in de begrippenlijst
@@ -182,7 +184,7 @@ class BegripGegevens:
     begripCode: str = None
 
     def to_xml(self, root: str) -> ET.Element:
-        """Transform BegripGegevens into XML tree
+        """Transform BegripGegevens into XML tree.
 
         Args:
             root (str): name of the new root tag
@@ -204,21 +206,32 @@ class BegripGegevens:
 
         return root
 
-
+# FIXME: allow users to specify a filepath or an file-like object
 class ChecksumGegevens:
-    """MDTO checksumGegevens class
+    """MDTO checksumGegevens class.
 
-    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/checksumGegevens
+    Takes a file-like object, and then generates the requisite checksum-metadata (i.e.
+    `checksumAlgoritme`, `checksumWaarde`, and `checksumDatum`) from that file.
+
+    Note that, when building Bestand objects, it's often easier to call the convience function `create_bestand()`.
+
+    MDTO docs:
+        https://www.nationaalarchief.nl/archiveren/mdto/checksum
+
+    Example:
+        ```python
+        with open("data/scan-003.jpg", "r") as myfile:
+            # users may manually specify the checksum algorithm to use
+            checksum = ChecksumGegevens(myfile, algorithm="sha512")
+        ```
+
+    Args:
+        infile (TextIO): file-like object to generate checksum data for
+        algorithm (str, optional): checksum algorithm to use; defaults to sha256. For valid values, see https://docs.python.org/3/library/hashlib.html
     """
 
     def __init__(self, infile: TextIO, algorithm: str = "sha256"):
-        """Create a new checksumGegevens object.
-        Values for `checksumAlgoritme`, `checksumWaarde`, and `checksumDatum` are generated automatically.
-
-        Args:
-            infile (TextIO): file-like object to generate checksum data for
-            algorithm (str, optional): checksum algorithm to use; defaults to sha256. For valid values, see https://docs.python.org/3/library/hashlib.html
-        """
+        """Create a new ChecksumGegevens object."""
 
         verwijzing = VerwijzingGegevens(
             verwijzingNaam="Begrippenlijst ChecksumAlgoritme MDTO"
@@ -238,7 +251,7 @@ class ChecksumGegevens:
         self.checksumDatum = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
     def to_xml(self) -> ET.Element:
-        """Transform Bestand into XML tree with the following structure:
+        """Transform ChecksumGegevens into XML tree with the following structure:
 
          ```xml
          <checksum>
@@ -270,14 +283,24 @@ class ChecksumGegevens:
 
 @dataclass
 class BeperkingGebruikGegevens:
+    """MDTO beperkingGebruik class.
 
-    # TODO: docstring
+    MDTO docs:
+        https://www.nationaalarchief.nl/archiveren/mdto/beperkingGebruik
+
+    Args:
+        beperkingGebruikType (BegripGegevens): Typering van de beperking
+        beperkingGebruikNadereBeschrijving (str, optional): Beschrijving van de beperking
+        beperkingGebruikDocumentatie (VerwijzingGegevens, optional): Verwijzing naar een beschrijving van de beperking
+        # FIXME: should be termijnGegevens
+        beperkingGebruikTermijn (str, optional): Termijn waarbinnen de beperking op het gebruik van toepassing is
+    """
 
     beperkingGebruikType: BegripGegevens
     beperkingGebruikNadereBeschrijving: str = None
     # TODO: this can be a list
     beperkingGebruikDocumentatie: VerwijzingGegevens = None
-    # TODO: maak een termijnGegevens dataclass
+    # TODO: maak een TermijnGegevens dataclass
     beperkingGebruikTermijn: str = None
 
     def to_xml(self) -> ET.Element:
@@ -309,6 +332,17 @@ class BeperkingGebruikGegevens:
 
 @dataclass
 class DekkingInTijdGegevens:
+    """MDTO dekkingInTijd class.
+
+    MDTO docs:
+        https://www.nationaalarchief.nl/archiveren/mdto/dekkingInTijd
+
+    Args:
+        dekkingInTijdType (BegripGegevens): Typering van de periode waar het informatieobject betrekking op heeft
+        dekkingInTijdBegindatum (str): Begindatum van de periode waar het informatieobject betrekking op heeft
+        dekkingInTijdEinddatum (str, optional): Einddatum van de periode waar het informatieobject betrekking op heeft
+    """
+
     dekkingInTijdType: BegripGegevens
     beginDatum: str
     eindDatum: str
@@ -325,6 +359,18 @@ class DekkingInTijdGegevens:
 
 @dataclass
 class EventGegevens:
+    """MDTO eventGegevens class.
+
+    MDTO docs:
+        https://www.nationaalarchief.nl/archiveren/mdto/event
+
+    Args:
+        eventType (BegripGegevens): Aanduiding van het type event
+        eventTijd (str, optional): Tijdstip waarop het event heeft plaatsgevonden
+        eventVerantwoordelijkeActor (VerwijzingGegevens, optional): Actor die verantwoordelijk was voor de gebeurtenis
+        eventResultaat (str, optional): Beschrijving van het resultaat van het event
+    """
+
     eventType: BegripGegevens
     eventTijd: str  # Aangepast naar str
     eventVerantwoordelijkeActor: VerwijzingGegevens
@@ -417,19 +463,19 @@ class Informatieobject:
     ```
 
     Args:
-        identificatie (IdentificatieGegevens | List[IdentificatieGegevens]): Gegevens waarmee het object geïdentificeerd kan worden.
-        naam (str): Een betekenisvolle aanduiding waaronder het object bekend is.
-        aggregatieNiveau (BegripGegevens, optional): Het aggregatieniveau van het informatieobject.
-        classificatie (BegripGegevens, optional): De classificatie van het informatieobject.
-        trefwoord (str, optional): Een trefwoord dat het informatieobject beschrijft.
-        omschrijving (str, optional): Een omschrijving van het informatieobject.
-        dekkingInTijd (DekkingInTijdGegevens, optional): De tijdsperiode waarin het informatieobject geldig is.
-        event (EventGegevens, optional): Een gebeurtenis gerelateerd aan het informatieobject.
-        waardering (BegripGegevens): De waardering van het informatieobject volgens een selectielijst.
+        identificatie (IdentificatieGegevens | List[IdentificatieGegevens]): Gegevens waarmee het object geïdentificeerd kan worden
+        naam (str): Betekenisvolle aanduiding waaronder het object bekend is
+        aggregatieNiveau (BegripGegevens, optional): Aggregatieniveau van het informatieobject
+        classificatie (BegripGegevens, optional): Classificatie van het informatieobject
+        trefwoord (str, optional): Trefwoord dat het informatieobject beschrijft
+        omschrijving (str, optional): Omschrijving van het informatieobject
+        dekkingInTijd (DekkingInTijdGegevens, optional): Periode waarop het informatieobject betrekking heeft
+        event (EventGegevens, optional): Gebeurtenis gerelateerd aan het informatieobject
+        waardering (BegripGegevens): Waardering van het informatieobject volgens een selectielijst
         bevatOnderdeel (VerwijzingGegevens, optional): Verwijzing naar een ander onderdeel dat deel uitmaakt van het informatieobject.
-        aanvullendeMetagegevens (VerwijzingGegevens, optional): Verwijzing naar een ander onderdeel dat deel uitmaakt van het informatieobject.
-        archiefvormer (VerwijzingGegevens | List[VerwijzingGegevens]): De organisatie die verantwoordelijk is voor het opmaken en/of ontvangen van het informatieobject.
-        beperkingGebruik (BeperkingGebruikGegevens | List[BeperkingGebruikGegevens]): Een beperking die gesteld is aan het gebruik van het informatieobject.
+        aanvullendeMetagegevens (VerwijzingGegevens, optional): Verwijzing naar een bestand dat aanvullende (domeinspecifieke) metagegevens over het informatieobject bevat
+        archiefvormer (VerwijzingGegevens | List[VerwijzingGegevens]): Organisatie die verantwoordelijk is voor het opmaken en/of ontvangen van het informatieobject
+        beperkingGebruik (BeperkingGebruikGegevens | List[BeperkingGebruikGegevens]): Beperking die gesteld is aan het gebruik van het informatieobject
 
     """
 
@@ -462,7 +508,7 @@ class Informatieobject:
         ```
 
         Returns:
-            ET.ElementTree: XML tree representing the Informatieobject object. This object can be written to a file by calling `.write()`.
+            ET.ElementTree: XML tree representing the Informatieobject object.
         """
 
         mdto = ET.Element(
@@ -540,7 +586,6 @@ class Informatieobject:
         return tree
 
 
-# see https://www.trueblade.com/blogs/news/python-3-10-new-dataclass-features
 @dataclass
 class Bestand:
     """MDTO Bestand class.
@@ -554,7 +599,7 @@ class Bestand:
         identificatie (IdentificatieGegevens): Gegevens waarmee het object geïdentificeerd kan worden
         naam (str): Een betekenisvolle aanduiding waaronder het object bekend is
         omvang (int): Aantal bytes in het bestand
-        bestandsformaat (BegripGegevens): De manier waarop de informatie in een computerbestand binair gecodeerd is
+        bestandsformaat (BegripGegevens): Manier waarop de informatie in een computerbestand binair gecodeerd is
         checksum (ChecksumGegevens): Checksum gegevens over het bestand
         isRepresentatieVan (VerwijzingGegevens): Verwijzing naar het informatieobject waarvan het bestand een (deel van een) representatie is
         URLBestand (str, optional): Actuele verwijzing naar het bestand in de vorm van een RFC 3986 conforme URI
@@ -678,7 +723,7 @@ def detect_verwijzing(informatieobject: TextIO) -> VerwijzingGegevens:
         informatieobject (TextIO): XML file to infer VerwijzingGegevens from
 
     Returns:
-        `VerwijzingGegevens`, refering to the informatieobject
+        `VerwijzingGegevens`, refering to the informatieobject specified by `informatieobject`
     """
 
     id_gegevens = None
