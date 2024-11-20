@@ -15,6 +15,7 @@ import validators
 MAX_NAAM_LENGTH = 80
 _force, _quiet = False, False
 
+
 # Helper methods
 def _process_file(file_or_filename) -> TextIO:
     """
@@ -473,7 +474,7 @@ class RaadpleeglocatieGegevens:
 
         # In MDTO, raadpleeglocatie may have no children, strangely enough
         if self.raadpleeglocatieFysiek:
-            root.append(self.raadpleeglocatieFysiek.to_xml('raadpleeglocatieFysiek'))
+            root.append(self.raadpleeglocatieFysiek.to_xml("raadpleeglocatieFysiek"))
 
         if self.raadpleeglocatieOnline:
             raadpleeglocatie_online_elem = ET.SubElement(root, "raadpleeglocatieOnline")
@@ -495,7 +496,7 @@ class RaadpleeglocatieGegevens:
     def raadpleeglocatieOnline(self, url: str):
         # if url is not set, (e.g. when calling RaadpleegLocatieGegevens() without arguments)
         # it will not be None, but rather an empty "property" object
-        if isinstance(url, property) or url is None: # check if empty
+        if isinstance(url, property) or url is None:  # check if empty
             self._raadpleeglocatieOnline = None
         elif validators.url(url):
             self._raadpleeglocatieOnline = url
@@ -523,11 +524,15 @@ class GerelateerdInformatieobjectGegevens:
         root = ET.Element("gerelateerdInformatieobject")
 
         root.append(
-            self.gerelateerdInformatieobjectVerwijzing.to_xml("gerelateerdInformatieobjectVerwijzing")
+            self.gerelateerdInformatieobjectVerwijzing.to_xml(
+                "gerelateerdInformatieobjectVerwijzing"
+            )
         )
 
         root.append(
-            self.gerelateerdInformatieobjectTypeRelatie.to_xml("gerelateerdInformatieobjectTypeRelatie")
+            self.gerelateerdInformatieobjectTypeRelatie.to_xml(
+                "gerelateerdInformatieobjectTypeRelatie"
+            )
         )
 
         return root
@@ -608,13 +613,13 @@ class Informatieobject:
     waardering: BegripGegevens
     aggregatieNiveau: BegripGegevens = None
     classificatie: BegripGegevens = None
-    trefwoord: str = None # FIXME: should also accept a list
+    trefwoord: str = None  # FIXME: should also accept a list
     omschrijving: str = None
     raadpleeglocatie: RaadpleeglocatieGegevens = None
     dekkingInTijd: DekkingInTijdGegevens = None
     dekkingInRuimte: VerwijzingGegevens = None
     taal: str = None
-    event: EventGegevens = None # FIXME: should also accept a list
+    event: EventGegevens = None  # FIXME: should also accept a list
     bewaartermijn: TermijnGegevens = None
     informatiecategorie: BegripGegevens = None
     bevatOnderdeel: VerwijzingGegevens | List[VerwijzingGegevens] = None
@@ -719,7 +724,9 @@ class Informatieobject:
                 root.append(b.to_xml("aanvullendeMetagegevens"))
 
         if self.gerelateerdInformatieobject:
-            root.append(self.gerelateerdInformatieobject.to_xml("gerelateerdInformatieobject"))
+            root.append(
+                self.gerelateerdInformatieobject.to_xml("gerelateerdInformatieobject")
+            )
 
         root.append(self.archiefvormer.to_xml("archiefvormer"))
 
@@ -859,7 +866,7 @@ class Bestand:
     def URLBestand(self, url):
         # if url is not set (e.g. when calling Bestand() without the URLBestand argument),
         # it will not be None, but rather an empty "property" object
-        if isinstance(url, property) or url is None: # check if empty
+        if isinstance(url, property) or url is None:  # check if empty
             self._URLBestand = None
         elif validators.url(url):
             self._URLBestand = url
