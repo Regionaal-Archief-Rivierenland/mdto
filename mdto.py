@@ -482,7 +482,7 @@ class Informatieobject:
         trefwoord (str | List[str], optional): Trefwoord dat het informatieobject beschrijft
         omschrijving (str, optional): Omschrijving van het informatieobject
         dekkingInTijd (DekkingInTijdGegevens, optional): Periode waarop het informatieobject betrekking heeft
-        event (EventGegevens, optional): Gebeurtenis gerelateerd aan het informatieobject
+        event (EventGegevens | List[EventGegevens], optional): Gebeurtenis gerelateerd aan het informatieobject
         bevatOnderdeel (VerwijzingGegevens, optional): Verwijzing naar een ander onderdeel dat deel uitmaakt van het informatieobject
         aanvullendeMetagegevens (VerwijzingGegevens, optional): Verwijzing naar een bestand dat aanvullende (domeinspecifieke) metagegevens bevat
         isOnderdeelVan (VerwijzingGegevens, optional): Bovenliggende aggregatie waar dit informatieobject onderdeel van is
@@ -499,7 +499,7 @@ class Informatieobject:
     trefwoord: str | List[str] = None
     omschrijving: str = None
     dekkingInTijd: DekkingInTijdGegevens = None
-    event: EventGegevens = None
+    event: EventGegevens | List[EventGegevens] = None
     bevatOnderdeel: VerwijzingGegevens | List[VerwijzingGegevens] = None
     aanvullendeMetagegevens: VerwijzingGegevens | List[VerwijzingGegevens] = None
     isOnderdeelVan: VerwijzingGegevens = None
@@ -565,7 +565,11 @@ class Informatieobject:
             root.append(self.dekkingInTijd.to_xml())
 
         if self.event:
-            root.append(self.event.to_xml())
+            if isinstance(self.event, EventGegevens):
+                self.event = [self.event]
+
+            for e in self.event:
+                root.append(e.to_xml("event"))
 
         root.append(self.waardering.to_xml("waardering"))
 
@@ -575,6 +579,7 @@ class Informatieobject:
         if self.bevatOnderdeel:
             if isinstance(self.bevatOnderdeel, VerwijzingGegevens):
                 self.bevatOnderdeel = [self.bevatOnderdeel]
+
             for b in self.bevatOnderdeel:
                 root.append(b.to_xml("bevatOnderdeel"))
         
