@@ -574,7 +574,7 @@ class Informatieobject:
 
     ```python
     # Maak informatieobject
-    informatieobject = Informatieobject(IdentificatieGegevens(…), naam="Kapvergunning", …)
+    informatieobject = Informatieobject("Kapvergunning", IdentificatieGegevens(…), …)
 
     xml = informatieobject.to_xml()
     with open("informatieobject.xml", 'w') as output_file:
