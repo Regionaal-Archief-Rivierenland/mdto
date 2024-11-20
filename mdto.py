@@ -484,7 +484,7 @@ class Informatieobject:
         dekkingInTijd (DekkingInTijdGegevens, optional): Periode waarop het informatieobject betrekking heeft
         event (EventGegevens, optional): Gebeurtenis gerelateerd aan het informatieobject
         bevatOnderdeel (VerwijzingGegevens, optional): Verwijzing naar een ander onderdeel dat deel uitmaakt van het informatieobject
-        aanvullendeMetagegevens (VerwijzingGegevens, optional): Verwijzing naar een bestand dat aanvullende (domeinspecifieke) metagegevens over het informatieobject bevat
+        aanvullendeMetagegevens (VerwijzingGegevens, optional): Verwijzing naar een bestand dat aanvullende (domeinspecifieke) metagegevens bevat
         isOnderdeelVan (VerwijzingGegevens, optional): Bovenliggende aggregatie waar dit informatieobject onderdeel van is
 
     """
