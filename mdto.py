@@ -724,7 +724,7 @@ class Bestand:
             _warn(f"URL '{url} is malformed.")
             self._URLBestand = url
 
-
+# TODO: should this also accept a file path?
 def detect_verwijzing(informatieobject: TextIO) -> VerwijzingGegevens:
     """
     A Bestand object must contain a reference to a corresponding informatieobject.
@@ -923,3 +923,130 @@ def create_bestand(
     return Bestand(
         naam, ids, omvang, bestandsformaat, checksum, isrepresentatievan, url
     )
+
+
+# TODO: this type annotation should be redone when the abstract Object class is implemented
+# Q: should this  also accept file objects?
+# Q: How to deal with invalid files?
+def from_file(xmlfile: str) -> Informatieobject | Bestand:
+    """
+    Construct a Informatieobject/Bestand object from a MDTO XML file.
+
+    In case the file in question is not valid MDTO, this function will probably raise an error.
+
+    Example:
+
+    ```python
+    import mdto
+
+    informatieobject = mdto.from_file("Voorbeelden/Voorbeeld Archiefstuk Informatieobject.xml")
+
+    # edit the informatie object
+    informatieobject.naam = "Verlenen kapvergunning Flipje's Erf 15 Tiel"
+
+    # save it to a new file
+    xml = informatieobject.to_xml()
+    with open("Nieuw informatieobject.xml", 'w') as output_file:
+        xml.write(output_file, xml_declaration=True, short_empty_elements=False)
+    ```
+
+    Args:
+        filename (str): The MDTO XML file to construct an Informatieobject/Bestand from
+
+    Returns:
+        Informatieobject | Bestand: A new MDTO object
+    """
+
+    mdto_ns = "https://www.nationaalarchief.nl/mdto"
+    ns = {"mdto": mdto_ns}
+    strip_ns = lambda elem: elem.tag.removeprefix((f"{{{mdto_ns}}}"))
+
+    def parse_verwijzinggegevens(elem) -> VerwijzingGegevens:
+        # verwijzing contains only a name
+        if len(elem) == 1:
+            return VerwijzingGegevens(elem[0].text)
+        # verwijzing contains a name and identificatie gegevens
+        else:
+            return VerwijzingGegevens(elem[0].text,
+                                      IdentificatieGegevens(elem[1][0].text, elem[1][1].text)
+                                      )
+
+    def parse_begripgegevens(elem) -> BegripGegevens:
+        label = elem[0].text
+        code_elem = elem.find('.//mdto:begripCode', namespaces=ns)
+        # begrippenlijst is mandatory, so it must the last child
+        begrippenlijst = parse_verwijzinggegevens(elem[-1])
+
+        if code_elem is not None:
+            return BegripGegevens(label, begrippenlijst,
+                                  begripCode=code_elem[-1].text
+                                  )
+        else:
+            return BegripGegevens(label, begrippenlijst)
+
+    def parse_termijngegevens(elem) -> TermijnGegevens:
+        children = []
+
+        for child in elem:
+            match strip_ns(child):
+                case "termijnTriggerStartLooptijd":
+                    children.append(parse_begripgegevens(child))
+                case "termijnStartdatumLooptijd":
+                    children.append(child.text)
+                case "termijnLooptijd":
+                    children.append(child.text)
+                case "termijnEinddatum":
+                    children.append(child.text)
+
+        return TermijnGegevens(*children)
+
+    tree = ET.parse(xmlfile)
+    root = tree.getroot()
+
+    # check if object type is Bestand or Informatieobject
+    object_type = strip_ns(root[0])
+    match object_type:
+        case "informatieobject":
+            # TODO: maybe make a list that holds all informatieobject data, and then pass it to the constructor
+            # with Informatieobject(*[informatieobject_data])
+            # construct IDs
+            ids = []
+            kenmerken = root.findall(".//mdto:identificatie/mdto:identificatieKenmerk", namespaces=ns)
+            bronnen = root.findall(".//mdto:identificatie/mdto:identificatieBron", namespaces=ns)
+            for k, b in zip(kenmerken, bronnen):
+                ids.append(IdentificatieGegevens(k.text, b.text))
+
+            # construct naam
+            naam = root.find(".//mdto:naam", namespaces=ns).text
+
+            # construct aggregatieniveau
+            aggregatieniveau_elem = root.find(".//mdto:aggregatieniveau", namespaces=ns)
+            if aggregatieniveau_elem is not None:
+                aggregatieniveau = parse_begripgegevens(aggregatieniveau_elem)
+
+            # construct waardering
+            waardering_elem = root.find(".//mdto:waardering", namespaces=ns)
+            waardering = parse_begripgegevens(waardering_elem)
+
+            # construct archiefvormer
+            archiefvormer_elem = root.find(".//mdto:archiefvormer", namespaces=ns)
+            archiefvormer = parse_verwijzinggegevens(archiefvormer_elem)
+
+            # construct beperkinggebruik
+            beperkinggebruik_elem = root.find(".//mdto:beperkinggebruik", namespaces=ns)
+            beperkinggebruik_children = []
+            for child in beperkinggebruik_elem:
+                match strip_ns(child):
+                    case "beperkingGebruikType":
+                        beperkinggebruik_children.append(parse_begripgegevens(child))
+                    case "beperkingGebruikNadereBeschrijving":
+                        beperkinggebruik_children.append(child.text)
+                    case "beperkingGebruikDocumentatie":
+                        beperkinggebruik_children.append(parse_verwijzinggegevens(child))
+                    case "beperkingGebruikTermijn":
+                        beperkinggebruik_children.append(parse_termijngegevens(child))
+
+            beperkinggebruik = BeperkingGebruikGegevens(*beperkinggebruik_children)
+            breakpoint()
+        case "bestand":
+            pass
