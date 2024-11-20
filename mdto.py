@@ -90,7 +90,7 @@ class IdentificatieGegevens:
     identificatieBron: str
 
     def to_xml(self, root: str) -> ET.Element:
-        """Transform IdentificatieGegevens into XML tree
+        """Transform IdentificatieGegevens into XML tree.
 
         Args:
             root (str): name of the new root tag
@@ -304,7 +304,7 @@ class BeperkingGebruikGegevens:
     beperkingGebruikTermijn: str = None
 
     def to_xml(self) -> ET.Element:
-        """Transform BeperkingGebruikGegevens into XML tree
+        """Transform BeperkingGebruikGegevens into XML tree.
 
         Returns:
             ET.Element: XML representation of BeperkingGebruikGegevens
@@ -372,7 +372,7 @@ class EventGegevens:
     Args:
         eventType (BegripGegevens): Aanduiding van het type event
         eventTijd (str, optional): Tijdstip waarop het event heeft plaatsgevonden
-        eventVerantwoordelijkeActor (VerwijzingGegevens, optional): Actor die verantwoordelijk was voor de gebeurtenis
+        eventVerantwoordelijkeActor (VerwijzingGegevens, optional): Actor die verantwoordelijk was voor het event
         eventResultaat (str, optional): Beschrijving van het resultaat van het event
     """
 
@@ -406,7 +406,8 @@ class EventGegevens:
 class RaadpleeglocatieGegevens:
     """MDTO raadpleeglocatie class.
 
-    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/raadpleeglocatie
+    MDTO docs:
+        https://www.nationaalarchief.nl/archiveren/mdto/raadpleeglocatie
 
     Args:
         raadpleeglocatieFysiek (VerwijzingGegevens, optional): Fysieke raadpleeglocatie van het informatieobject
@@ -602,7 +603,8 @@ class Bestand:
     When creating Bestand XML files, it may be more easier to instead use the
     `create_bestand()` convenience function, or to invoke this program as a CLI tool.
 
-    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/bestand
+    MDTO docs:
+        https://www.nationaalarchief.nl/archiveren/mdto/bestand
 
     Args:
         identificatie (IdentificatieGegevens): Gegevens waarmee het object geïdentificeerd kan worden
