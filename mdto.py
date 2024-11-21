@@ -5,7 +5,7 @@ import subprocess
 import hashlib
 from typing import TextIO, List
 from datetime import datetime
-import xml.etree.ElementTree as ET
+import lxml.etree as ET
 from dataclasses import dataclass
 from functools import partial
 
@@ -1119,10 +1119,10 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
     """
 
     # Arg constructors:
-    def add_singleton(d, k, v): # faster than the lambda equivalent
+    def singleton(d, k, v): # faster than the lambda equivalent
         d[k] = v
 
-    def add_list(d, k, v):
+    def repeatable(d, k, v):
         d[k].append(v)
 
     # Parsers (def's are slightly faster than stored lambdas):
@@ -1135,7 +1135,7 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
             node[1].text,
         )
 
-    # this is measurably faster than elem_to_mdto
+    # this is measurably faster than the elem_to_mdto variant
     def parse_verwijzing(node):
         if len(node) == 1:
             return VerwijzingGegevens(node[0].text)
@@ -1162,39 +1162,53 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
         return mdto_class(**constructor_args)
 
     begrip_parsers = {
-        "begripLabel": (parse_text, add_singleton),
-        "begripCode": (parse_text, add_singleton),
-        "begripBegrippenlijst": (parse_verwijzing, add_singleton),
+        "begripLabel": (parse_text, singleton),
+        "begripCode": (parse_text, singleton),
+        "begripBegrippenlijst": (parse_verwijzing, singleton),
     }
     parse_begrip = lambda e: elem_to_mdto(e, BegripGegevens, begrip_parsers)
 
     termijn_parsers = {
-        "termijnTriggerStartLooptijd": (parse_begrip, add_singleton),
-        "termijnStartdatumLooptijd": (parse_text, add_singleton),
-        "termijnLooptijd": (parse_text, add_singleton),
-        "termijnEinddatum": (parse_text, add_singleton),
+        "termijnTriggerStartLooptijd": (parse_begrip, singleton),
+        "termijnStartdatumLooptijd": (parse_text, singleton),
+        "termijnLooptijd": (parse_text, singleton),
+        "termijnEinddatum": (parse_text, singleton),
     }
     parse_termijn = lambda e: elem_to_mdto(e, TermijnGegevens, termijn_parsers)
 
     beperking_parsers = {
-        "beperkingGebruikType": (parse_begrip, add_singleton),
-        "beperkingGebruikNadereBeschrijving": (parse_text, add_singleton),
-        "beperkingGebruikDocumentatie": (parse_verwijzing, add_list),
-        "beperkingGebruikTermijn": (parse_termijn, add_singleton),
+        "beperkingGebruikType": (parse_begrip, singleton),
+        "beperkingGebruikNadereBeschrijving": (parse_text, singleton),
+        "beperkingGebruikDocumentatie": (parse_verwijzing, repeatable),
+        "beperkingGebruikTermijn": (parse_termijn, singleton),
     }
-    parse_beperking = lambda e: elem_to_mdto(e, BeperkingGebruikGegevens, beperking_parsers)
+    parse_beperking = lambda e: elem_to_mdto(
+        e, BeperkingGebruikGegevens, beperking_parsers
+    )
+
+    raadpleeglocatie_parsers = {
+        "raadpleeglocatieFysiek": (parse_verwijzing, repeatable),
+        "raadpleeglocatieFysiek": (parse_text, repeatable),        
+    }
+    parse_raadpleeglocatie = lambda e: elem_to_mdto(
+        e, RaadpleeglocatieGegevens, raadpleeglocatie_parsers
+    )
 
     informatieobject_parsers = {
-        "naam": (parse_text, add_singleton),
-        "omschrijving": (parse_text, add_singleton),
-        "taal": (parse_text, add_singleton),
-        "identificatie": (parse_identificatie, add_list),
-        "aggregatieniveau": (parse_begrip, add_singleton),
-        "waardering": (parse_begrip, add_singleton),
-        "archiefvormer": (parse_verwijzing, add_list),
-        "beperkingGebruik": (parse_beperking, add_list),
+        "naam": (parse_text, singleton),
+        "identificatie": (parse_identificatie, repeatable),
+        "aggregatieniveau": (parse_begrip, singleton),
+        "classificatie": (parse_begrip, repeatable),
+        "trefwoord": (parse_text, repeatable),
+        "omschrijving": (parse_text, singleton),
+        "taal": (parse_text, singleton),
+        "waardering": (parse_begrip, singleton),
+        "archiefvormer": (parse_verwijzing, repeatable),
+        "beperkingGebruik": (parse_beperking, repeatable),
     }
-    parse_informatieobject = lambda e: elem_to_mdto(e, Informatieobject, informatieobject_parsers)
+    parse_informatieobject = lambda e: elem_to_mdto(
+        e, Informatieobject, informatieobject_parsers
+    )
 
     # read xmlfile
     tree = ET.parse(xmlfile)
