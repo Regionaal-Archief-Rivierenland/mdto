@@ -7,6 +7,7 @@ from typing import TextIO, List
 from datetime import datetime
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
+from functools import partial
 
 # Make into an optional dependency?
 import validators
@@ -1086,7 +1087,7 @@ def create_bestand(
 
 
 # TODO: this type annotation should be redone when the abstract Object class is implemented
-# Q: should this  also accept file objects?
+# Q: should this also accept file objects?
 # Q: How to deal with invalid files?
 def from_file(xmlfile: str) -> Informatieobject | Bestand:
     """Construct a Informatieobject/Bestand object from a MDTO XML file.
@@ -1117,137 +1118,103 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
         Informatieobject | Bestand: A new MDTO object
     """
 
-    mdto_ns = "https://www.nationaalarchief.nl/mdto"
-    strip_namespace = lambda elem: elem.tag.removeprefix((f"{{{mdto_ns}}}"))
-    add_list = lambda d, k, v: d[k].append(v)
-    add_singleton = lambda d, k, v: d.update({k : v})
+    # Arg constructors:
+    def add_singleton(d, k, v): # faster than the lambda equivalent
+        d[k] = v
 
-    # rename to: args_from_elem_single/multiple?
-    def args_from_elem(elem: ET.Element, parsers: dict) -> dict:
-        """
+    def add_list(d, k, v):
+        d[k].append(v)
+
+    # Parsers (def's are slightly faster than stored lambdas):
+    def parse_text(node):
+        return node.text
+
+    def parse_identificatie(node):
+        return IdentificatieGegevens(
+            node[0].text,
+            node[1].text,
+        )
+
+    # this is measurably faster than elem_to_mdto
+    def parse_verwijzing(node):
+        if len(node) == 1:
+            return VerwijzingGegevens(node[0].text)
+        else:
+            return VerwijzingGegevens(
+                node[0].text,
+                parse_identificatie(node[1]),
+            )
+
+    def elem_to_mdto(elem: ET.Element, mdto_class: classmethod, class_xml_parsers: dict):
+        """Construct MDTO class from given XML element, using parsers specified in
+        class_xml_parsers.
+
         Returns:
-           dict: the kwargs that shouldd will be be passed to an MDTO constructor
+            MDTO instance: a initialized MDTO instance of type `mdto_class`
         """
-        args = {field : None for field in parsers.keys()}
+        constructor_args = {k : [] for k in class_xml_parsers}
 
         for child in elem:
-            # strip namespace
-            tagname = strip_namespace(child)
-            # get value of child node using the parser associated with the tagname
-            parser = parsers[tagname]
-            args[tagname] = parser(child)
+           tagname = child.tag.removeprefix("{https://www.nationaalarchief.nl/mdto}")
+           xml_parser, add_to_args = class_xml_parsers[tagname]
+           add_to_args(constructor_args, tagname, xml_parser(child))
 
-        return args
-    
-    # Parsers:
-    parse_text = lambda node: node.text
-    parse_identificatie = lambda node: IdentificatieGegevens(
-        node[0].text,
-        node[1].text,
-    )
+        return mdto_class(**constructor_args)
 
-    def parse_verwijzing(elem: ET.Element) -> VerwijzingGegevens:
-        verwijzing_parsers = {
-            "verwijzingNaam": parse_text,
-            "verwijzingIdentificatie": parse_identificatie,
-        }
+    verwijzing_parsers = {
+        # kw_name : (parser, add_method)
+        "verwijzingNaam": (parse_text, add_singleton),
+        "verwijzingIdentificatie": (parse_identificatie, add_singleton),
+    }
+    parse_verwijzing = lambda e: elem_to_mdto(e, VerwijzingGegevens, verwijzing_parsers)
 
-        return VerwijzingGegevens(**args_from_elem(elem, verwijzing_parsers))
+    begrip_parsers = {
+        "begripLabel": (parse_text, add_singleton),
+        "begripCode": (parse_text, add_singleton),
+        "begripBegrippenlijst": (parse_verwijzing, add_singleton),
+    }
+    parse_begrip = lambda e: elem_to_mdto(e, BegripGegevens, begrip_parsers)
 
-    def parse_begrip(elem: ET.Element) -> BegripGegevens:
-        begrip_parsers = {
-            "begripLabel": parse_text,
-            "begripCode": parse_text,
-            "begripBegrippenlijst": parse_verwijzing,
-        }
+    termijn_parsers = {
+        "termijnTriggerStartLooptijd": (parse_begrip, add_singleton),
+        "termijnStartdatumLooptijd": (parse_text, add_singleton),
+        "termijnLooptijd": (parse_text, add_singleton),
+        "termijnEinddatum": (parse_text, add_singleton),
+    }
+    parse_termijn = lambda e: elem_to_mdto(e, TermijnGegevens, termijn_parsers)
 
-        return BegripGegevens(**args_from_elem(elem, begrip_parsers))
+    beperking_parsers = {
+        "beperkingGebruikType": (parse_begrip, add_singleton),
+        "beperkingGebruikNadereBeschrijving": (parse_text, add_singleton),
+        "beperkingGebruikDocumentatie": (parse_verwijzing, add_list),
+        "beperkingGebruikTermijn": (parse_termijn, add_singleton),
+    }
+    parse_beperking = lambda e: elem_to_mdto(e, BeperkingGebruikGegevens, beperking_parsers)
 
-    def parse_termijn(elem: ET.Element) -> TermijnGegevens:
-        termijn_parsers = {
-            "termijnTriggerStartLooptijd": parse_begrip,
-            "termijnStartdatumLooptijd": parse_text,
-            "termijnLooptijd": parse_text,
-            "termijnEinddatum": parse_text,
-        }
+    informatieobject_parsers = {
+        "naam": (parse_text, add_singleton),
+        "omschrijving": (parse_text, add_singleton),
+        "taal": (parse_text, add_singleton),
+        "identificatie": (parse_identificatie, add_list),
+        "aggregatieniveau": (parse_begrip, add_singleton),
+        "waardering": (parse_begrip, add_singleton),
+        "archiefvormer": (parse_verwijzing, add_list),
+        "beperkingGebruik": (parse_beperking, add_list),
+    }
+    parse_informatieobject = lambda e: elem_to_mdto(e, Informatieobject, informatieobject_parsers)
 
-        return TermijnGegevens(**args_from_elem(elem, termijn_parsers))
-
-    def parse_beperking(elem: ET.Element) -> BeperkingGebruikGegevens:
-        beperking_parsers = {
-            "beperkingGebruikType": parse_begrip,
-            "beperkingGebruikNadereBeschrijving": parse_text,
-            "beperkingGebruikDocumentatie": parse_verwijzing,
-            "beperkingGebruikTermijn": parse_termijn,
-        }
-
-        return BeperkingGebruikGegevens(**args_from_elem(elem, beperking_parsers))
-
-    def parse_informatieobject(elems: List[ET.Element]) -> Informatieobject:
-        informatieobject_parsers = {
-            # kw_name, (parser, add_method)
-            "naam": (parse_text, add_singleton),
-            "omschrijving": (parse_text, add_singleton),
-            "taal": (parse_text, add_singleton),
-            "identificatie": (parse_identificatie, add_list),
-            "aggregatieniveau": (parse_begrip, add_singleton),
-            "waardering": (parse_begrip, add_singleton),
-            "archiefvormer": (parse_verwijzing, add_list),
-            "beperkingGebruik": (parse_beperking, add_list),
-        }
-        informatieobject_args = {k : [] for k in informatieobject_parsers.keys()}
-
-        for e in elems:
-           tagname = strip_namespace(e)
-           parser, add_to_args = informatieobject_parsers[tagname]
-           add_to_args(informatieobject_args, tagname, parser(e))
-
-        return Informatieobject(**informatieobject_args)
-
-    # TODO: if you pass the parser (and class) to the function you can make something really generic
-    # and potentially faster (since you don't have to )
+    # read xmlfile
     tree = ET.parse(xmlfile)
     root = tree.getroot()
     children = list(root[0])
 
     # check if object type is Bestand or Informatieobject
-    object_type = strip_namespace(root[0])
+    object_type = root[0].tag.removeprefix("{https://www.nationaalarchief.nl/mdto}")
+
     if object_type == "informatieobject":
         return parse_informatieobject(children)
-            
-            # and then just pop everytime!
-            # do checking parents?
-            # and keep a stack?
-            # maybe try and see if you can get parent nodes?
-        # TODO: maybe make a list that holds all informatieobject data, and then pass it to the constructor
-        # with Informatieobject(*[informatieobject_data])
-        # construct IDs
-        # ids = []
-        # kenmerken = root.findall(".//mdto:identificatie/mdto:identificatieKenmerk", namespaces=ns)
-        # bronnen = root.findall(".//mdto:identificatie/mdto:identificatieBron", namespaces=ns)
-        # for k, b in zip(kenmerken, bronnen):
-        #     ids.append(IdentificatieGegevens(k.text, b.text))
-
-        # # construct naam
-        # naam = root.find(".//mdto:naam", namespaces=ns).text
-
-        # # construct aggregatieniveau
-        # aggregatieniveau_elem = root.find(".//mdto:aggregatieniveau", namespaces=ns)
-        # if aggregatieniveau_elem is not None:
-        #     aggregatieniveau = parse_begrip(aggregatieniveau_elem)
-
-        # # construct waardering
-        # waardering_elem = root.find(".//mdto:waardering", namespaces=ns)
-        # waardering = parse_begrip(waardering_elem)
-
-        # # construct archiefvormer
-        # archiefvormer_elem = root.find(".//mdto:archiefvormer", namespaces=ns)
-        # archiefvormer = parse_verwijzing(archiefvormer_elem)
-
-        # # construct beperkinggebruik
-        # beperkinggebruik_elem = root.find(".//mdto:beperkingGebruik", namespaces=ns)
-        # beperkinggebruik = parse_beperking(beperkinggebruik_elem)
-
-            
     elif object_type == "bestand":
             pass
+    else:
+        raise ValueError("Unexpected first child in <MDTO>:"
+        "expected <informatieobject> or <bestand>.")
