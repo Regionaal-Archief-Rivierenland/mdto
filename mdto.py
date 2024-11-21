@@ -494,7 +494,7 @@ class Informatieobject:
     archiefvormer: VerwijzingGegevens | List[VerwijzingGegevens]
     beperkingGebruik: BeperkingGebruikGegevens | List[BeperkingGebruikGegevens]
     waardering: BegripGegevens
-    aggregatieNiveau: BegripGegevens = None
+    aggregatieniveau: BegripGegevens = None
     classificatie: BegripGegevens = None
     trefwoord: str | List[str] = None
     omschrijving: str = None
