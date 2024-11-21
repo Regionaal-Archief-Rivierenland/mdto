@@ -671,17 +671,13 @@ class Bestand:
 
         return tree
 
-    @property
-    def URLBestand(self):
-        """Value of MDTO 'URLBestand' tag.
-
-        Valid value: any RFC 3986 compliant URI
-        MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/URLBestand
-        """
-        return self._URLBestand
-
     @URLBestand.setter
-    def URLBestand(self, url):
+    def URLBestand(self, url: str):
+        """https://www.nationaalarchief.nl/archiveren/mdto/URLBestand
+
+        Args:
+            url (str): any RFC 3986 compliant URI
+        """
         # if url is not set (e.g. when calling Bestand() without the URLBestand argument),
         # it will not be None, but rather an empty "property" object
         if isinstance(url, property) or url is None: # check if empty
@@ -692,6 +688,9 @@ class Bestand:
             _warn(f"URL '{url} is malformed.")
             self._URLBestand = url
 
+    @property
+    def URLBestand(self):
+        return self._URLBestand
 
 def detect_verwijzing(informatieobject: TextIO) -> VerwijzingGegevens:
     """A Bestand object must contain a reference to a corresponding informatieobject.
