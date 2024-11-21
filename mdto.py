@@ -442,12 +442,14 @@ class RaadpleeglocatieGegevens:
         return self._raadpleeglocatieOnline
 
     @raadpleeglocatieOnline.setter
-    def raadpleeglocatieOnline(self, url: str):
+    def raadpleeglocatieOnline(self, url: str | List[str]):
         # if url is not set, (e.g. when calling RaadpleegLocatieGegevens() without arguments)
         # it will not be None, but rather an empty "property" object
         if isinstance(url, property) or url is None: # check if empty
             self._raadpleeglocatieOnline = None
-        elif validators.url(url):
+        elif isinstance(url, list) and all(validators.url(u) for u in url):
+            self._raadpleeglocatieOnline = url
+        elif isinstance(url, str) and validators.url(url):
             self._raadpleeglocatieOnline = url
         else:
             _warn(f"URL '{url}' is malformed.")
