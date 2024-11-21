@@ -1158,7 +1158,7 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
            tagname = child.tag.removeprefix("{https://www.nationaalarchief.nl/mdto}")
            xml_parser, add_to_args = class_xml_parsers[tagname]
            add_to_args(constructor_args, tagname, xml_parser(child))
-
+        # breakpoint()
         return mdto_class(**constructor_args)
 
     begrip_parsers = {
@@ -1188,10 +1188,45 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
 
     raadpleeglocatie_parsers = {
         "raadpleeglocatieFysiek": (parse_verwijzing, repeatable),
-        "raadpleeglocatieFysiek": (parse_text, repeatable),        
+        "raadpleeglocatieOnline": (parse_text, repeatable),
     }
     parse_raadpleeglocatie = lambda e: elem_to_mdto(
         e, RaadpleeglocatieGegevens, raadpleeglocatie_parsers
+    )
+
+    dekking_in_tijd_parsers = {
+        "dekkingInTijdType": (parse_begrip, singleton),
+        "dekkingInTijdBegindatum": (parse_text, singleton),
+        "dekkingInTijdEinddatum": (parse_text, singleton),
+    }
+    parse_dekking_in_tijd = lambda e: elem_to_mdto(
+        e, DekkingInTijdGegevens, dekking_in_tijd_parsers
+    )
+
+    event_parsers = {
+        "eventType": (parse_begrip, singleton),
+        "evenTijd": (parse_text, singleton),
+        "eventVerantwoordelijkeActor": (parse_verwijzing, singleton),
+        "eventResultaat": (parse_text, singleton),
+    }
+    parse_event = lambda e: elem_to_mdto(e, EventGegevens, event_parsers)
+    
+    gerelateerd_informatieobject_parsers = {
+        "gerelateerdInformatieobjectVerwijzing": (parse_verwijzing, singleton),
+        "gerelateerdInformatieobjectTypeRelatie": (parse_begrip, singleton),
+    }
+    parse_gerelateerd_informatieobject = lambda e: elem_to_mdto(
+        e,
+        GerelateerdInformatieobjectGegevens,
+        gerelateerd_informatieobject_parsers
+    )
+
+    betrokkene_parsers = {
+        "betrokkeneTypeRelatie": (parse_begrip, singleton),
+        "betrokkeneActor": (parse_verwijzing, singleton),
+    }
+    parse_betrokkene = lambda e: elem_to_mdto(
+        e, BetrokkeneGegevens, betrokkene_parsers
     )
 
     informatieobject_parsers = {
@@ -1201,9 +1236,23 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
         "classificatie": (parse_begrip, repeatable),
         "trefwoord": (parse_text, repeatable),
         "omschrijving": (parse_text, singleton),
-        "taal": (parse_text, singleton),
+        "raadpleeglocatie": (parse_raadpleeglocatie, repeatable),
+        "dekkingInTijd": (parse_dekking_in_tijd, repeatable),
+        "dekkingInRuimte": (parse_verwijzing, repeatable),
+        "taal": (parse_text, repeatable),
+        "event": (parse_event, repeatable),
         "waardering": (parse_begrip, singleton),
+        "bewaartermijn": (parse_termijn, singleton),
+        "informatiecategorie": (parse_begrip, singleton),
+        "isOnderdeelVan": (parse_verwijzing, repeatable),
+        "bevatOnderdeel": (parse_verwijzing, repeatable),
+        "heeftRepresentatie": (parse_verwijzing, repeatable),
+        "aanvullendeMetagegevens": (parse_verwijzing, repeatable),
+        "gerelateerdInformatieobject": (parse_gerelateerd_informatieobject,
+                                        repeatable),
         "archiefvormer": (parse_verwijzing, repeatable),
+        "betrokkene": (parse_betrokkene, repeatable),
+        "activiteit": (parse_verwijzing, repeatable),
         "beperkingGebruik": (parse_beperking, repeatable),
     }
     parse_informatieobject = lambda e: elem_to_mdto(
@@ -1221,7 +1270,7 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
     if object_type == "informatieobject":
         return parse_informatieobject(children)
     elif object_type == "bestand":
-            pass
+        pass
     else:
         raise ValueError("Unexpected first child in <MDTO>:"
         "expected <informatieobject> or <bestand>.")
