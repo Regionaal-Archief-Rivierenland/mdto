@@ -1169,6 +1169,16 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
 
         return TermijnGegevens(**construct_args_from_elem(elem, termijn_parsers))
 
+    def parse_beperkinggebruik(elem) -> BeperkingGebruikGegevens:
+        beperkinggebruik_parsers = {
+                "beperkingGebruikType": parse_begripgegevens,
+                "beperkingGebruikNadereBeschrijving": lambda child: child.text,
+                "beperkingGebruikDocumentatie": parse_verwijzinggegevens,
+                "beperkingGebruikTermijn": parse_termijngegevens,
+            }
+
+        return BeperkingGebruikGegevens(**construct_args_from_elem(elem, beperkinggebruik_parsers))
+
     def parse_informatieobject(elem) -> Informatieobject:
         informatieobject_node_parsers = {
             "naam" : parse_text,
@@ -1203,7 +1213,7 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
         aggregatieniveau_elem = root.find(".//mdto:aggregatieniveau", namespaces=ns)
         if aggregatieniveau_elem is not None:
             aggregatieniveau = parse_begripgegevens(aggregatieniveau_elem)
-            breakpoint()
+
         # construct waardering
         waardering_elem = root.find(".//mdto:waardering", namespaces=ns)
         waardering = parse_begripgegevens(waardering_elem)
@@ -1214,20 +1224,19 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
 
         # construct beperkinggebruik
         beperkinggebruik_elem = root.find(".//mdto:beperkingGebruik", namespaces=ns)
-        beperkinggebruik_parsers = {
-            "beperkingGebruikType": parse_begripgegevens,
-            "beperkingGebruikNadereBeschrijving": lambda child: child.text,
-            "beperkingGebruikDocumentatie": parse_verwijzinggegevens,
-            "beperkingGebruikTermijn": parse_termijngegevens,
-        }
-        # put fields of BeperkingGebruikGegevens in a dict to use as named function arguments
-        beperkinggebruik_args = {field : None for field in beperkinggebruik_args}
+        beperkinggebruik = parse_beperkinggebruik(beperkinggebruik_elem)
 
-        for child in beperkinggebruik_elem:
-            tagname = strip_ns(child)
-            beperkinggebruik_args[tagname] = beperkinggebruik_parsers[tagname](child)
 
-        beperkinggebruik = BeperkingGebruikGegevens(*beperkinggebruik_args)
-        breakpoint()
+        # root_len = len(root)
+        while root.pop(): # wwalrus?
+            # and then just pop everytime!
+            # do checking parents?
+            # and keep a stack?
+        idx = 1
+        while idx <= len(root): # or len(root.children)?
+            beperkinggebruik = parse_beperkinggebruik(waardering)
+            idx += 1
+            # maybe try and see if you can get parent nodes?
+            
     elif object_type == "bestand":
             pass
