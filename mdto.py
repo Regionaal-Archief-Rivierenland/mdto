@@ -1161,13 +1161,6 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
 
         return mdto_class(**constructor_args)
 
-    verwijzing_parsers = {
-        # kw_name : (parser, add_method)
-        "verwijzingNaam": (parse_text, add_singleton),
-        "verwijzingIdentificatie": (parse_identificatie, add_singleton),
-    }
-    parse_verwijzing = lambda e: elem_to_mdto(e, VerwijzingGegevens, verwijzing_parsers)
-
     begrip_parsers = {
         "begripLabel": (parse_text, add_singleton),
         "begripCode": (parse_text, add_singleton),
