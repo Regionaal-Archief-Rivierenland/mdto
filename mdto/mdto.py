@@ -1131,7 +1131,7 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
 
         for child in elem:
             mdto_field = child.tag.removeprefix("{https://www.nationaalarchief.nl/mdto}")
-            xml_parser, add_to_constructor = class_xml_parsers[tagname]
+            xml_parser, add_to_constructor = class_xml_parsers[mdto_field]
             add_to_constructor(constructor_args, mdto_field, xml_parser(child))
         return mdto_class(**constructor_args)
 
