@@ -22,7 +22,8 @@ def _process_file(file_or_filename) -> TextIO:
     Otherwise, assume the argument is a path, and convert
     it to a new file-object.
 
-    Note: the returned file-object is always in read-only mode
+    Note:
+        The returned file-object is always in read-only mode.
     """
 
     # filename?
