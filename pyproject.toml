@@ -29,3 +29,6 @@ Issues = "https://github.com/Regionaal-Archief-Rivierenland/mdto.py/issues"
 [build-system]
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["mdto"]
