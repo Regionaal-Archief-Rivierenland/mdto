@@ -19,12 +19,12 @@ _force, _quiet = False, False
 
 # Helper methods
 def _process_file(file_or_filename) -> TextIO:
-    """
-    Return file-object if input is already a file.
+    """Return file-object if input is already a file.
     Otherwise, assume the argument is a path, and convert
     it to a new file-object.
 
-    Note: the returned file-object is always in read-only mode
+    Note:
+        The returned file-object is always in read-only mode.
     """
 
     # filename?
@@ -78,10 +78,7 @@ def _error(error):
 
 @dataclass
 class IdentificatieGegevens:
-    """MDTO identificatieGegevens class.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/identificatieGegevens
+    """https://www.nationaalarchief.nl/archiveren/mdto/identificatieGegevens
 
     Args:
         identificatieKenmerk (str): Een kenmerk waarmee een object geïdentificeerd kan worden
@@ -114,10 +111,7 @@ class IdentificatieGegevens:
 
 @dataclass
 class VerwijzingGegevens:
-    """MDTO verwijzingGegevens class.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/verwijzingsGegevens
+    """https://www.nationaalarchief.nl/archiveren/mdto/verwijzingsGegevens
 
     Args:
         verwijzingNaam (str): Naam van het object waarnaar verwezen wordt
@@ -170,10 +164,7 @@ class VerwijzingGegevens:
 
 @dataclass
 class BegripGegevens:
-    """MDTO begripGegevens class.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/begripGegevens
+    """https://www.nationaalarchief.nl/archiveren/mdto/begripGegevens
 
     Args:
         begripLabel (str): De tekstweergave van het begrip dat is toegekend in de begrippenlijst
@@ -211,10 +202,7 @@ class BegripGegevens:
 
 @dataclass
 class TermijnGegevens:
-    """MDTO termijnGegevens class.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/termijnGegevens
+    """https://www.nationaalarchief.nl/archiveren/mdto/termijnGegevens
 
     Args:
         termijnTriggerStartLooptijd (BegripGegevens, optional): Gebeurtenis waarna de looptijd van de termijn start
@@ -303,10 +291,7 @@ class ChecksumGegevens:
 
 @dataclass
 class BeperkingGebruikGegevens:
-    """MDTO beperkingGebruik class.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/beperkingGebruik
+    """https://www.nationaalarchief.nl/archiveren/mdto/beperkingGebruik
 
     Args:
         beperkingGebruikType (BegripGegevens): Typering van de beperking
@@ -352,10 +337,7 @@ class BeperkingGebruikGegevens:
 
 @dataclass
 class DekkingInTijdGegevens:
-    """MDTO dekkingInTijd class.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/dekkingInTijd
+    """https://www.nationaalarchief.nl/archiveren/mdto/dekkingInTijd
 
     Args:
         dekkingInTijdType (BegripGegevens): Typering van de periode waar het informatieobject betrekking op heeft
@@ -384,10 +366,7 @@ class DekkingInTijdGegevens:
 
 @dataclass
 class EventGegevens:
-    """MDTO eventGegevens class.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/event
+    """https://www.nationaalarchief.nl/archiveren/mdto/event
 
     Args:
         eventType (BegripGegevens): Aanduiding van het type event
@@ -424,10 +403,7 @@ class EventGegevens:
 
 @dataclass
 class RaadpleeglocatieGegevens:
-    """MDTO raadpleeglocatie class.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/raadpleeglocatie
+    """https://www.nationaalarchief.nl/archiveren/mdto/raadpleeglocatie
 
     Args:
         raadpleeglocatieFysiek (VerwijzingGegevens, optional): Fysieke raadpleeglocatie van het informatieobject
@@ -450,19 +426,13 @@ class RaadpleeglocatieGegevens:
 
         return root
 
-    @property
-    def raadpleeglocatieOnline(self):
-        """Value of MDTO `raadpleeglocatieOnline` tag.
-
-        Valid value: any RFC 3986 compliant URI
-
-        MDTO docs:
-            https://www.nationaalarchief.nl/archiveren/mdto/raadpleeglocatieOnline
-        """
-        return self._raadpleeglocatieOnline
-
     @raadpleeglocatieOnline.setter
     def raadpleeglocatieOnline(self, url: str | List[str]):
+        """https://www.nationaalarchief.nl/archiveren/mdto/raadpleeglocatieOnline
+
+        Args:
+            url (str): any RFC 3986 compliant URI
+        """
         # if url is not set, (e.g. when calling RaadpleegLocatieGegevens() without arguments)
         # it will not be None, but rather an empty "property" object
         if isinstance(url, property) or url is None:  # check if empty
@@ -475,13 +445,14 @@ class RaadpleeglocatieGegevens:
             _warn(f"URL '{url}' is malformed.")
             self._raadpleeglocatieOnline = url
 
+    @property
+    def raadpleeglocatieOnline(self):
+        return self._raadpleeglocatieOnline
+
 
 @dataclass
 class GerelateerdInformatieobjectGegevens:
-    """MDTO gerelateerdInformatieobjectGegevens class.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/gerelateerdInformatieobjectGegevens
+    """https://www.nationaalarchief.nl/archiveren/mdto/gerelateerdInformatieobjectGegevens
 
     Args:
         gerelateerdInformatieobjectVerwijzing (VerwijzingGegevens): Verwijzing naar het gerelateerde informatieobject
@@ -511,10 +482,7 @@ class GerelateerdInformatieobjectGegevens:
 
 @dataclass
 class BetrokkeneGegevens:
-    """MDTO betrokkeneGegevens class.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/betrokkeneGegevens
+    """https://www.nationaalarchief.nl/archiveren/mdto/betrokkeneGegevens
 
     Args:
         betrokkeneTypeRelatie (BegripGegevens): Typering van de betrokkenheid van de actor bij het informatieobject
@@ -537,9 +505,7 @@ class BetrokkeneGegevens:
 # TODO: place more restrictions on taal?
 @dataclass
 class Informatieobject:
-    """MDTO Informatieobject class.
-
-    MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/informatieobject
+    """https://www.nationaalarchief.nl/archiveren/mdto/informatieobject
 
     Example:
 
@@ -565,7 +531,7 @@ class Informatieobject:
         dekkingInTijd (DekkingInTijdGegevens, optional): Periode waarop het informatieobject betrekking heeft
         dekkingInRuimte (VerwijzingGegevens, optional): Plaats/locatie waar het informatieobject betrekking op heeft
         taal (str, optional): Taal waarin het informatieobject gesteld is
-        event (EventGegevens, optional): Gebeurtenis gerelateerd aan het informatieobject
+        event (EventGegevens | List[EventGegevens], optional): Gebeurtenis gerelateerd aan het informatieobject
         bewaartermijn (TermijnGegevens, optional): Termijn waarin het informatieobject bewaard dient te worden
         informatiecategorie (BegripGegevens, optional): Informatiecategorie uit een selectie- of hotspotlijst waar de bewaartermijn op gebaseerd is
         bevatOnderdeel (VerwijzingGegevens, optional): Verwijzing naar een ander onderdeel dat deel uitmaakt van het informatieobject
@@ -590,7 +556,7 @@ class Informatieobject:
     dekkingInTijd: DekkingInTijdGegevens = None
     dekkingInRuimte: VerwijzingGegevens = None
     taal: str = None
-    event: EventGegevens = None  # FIXME: should also accept a list
+    event: EventGegevens | List[EventGegevens] = None
     bewaartermijn: TermijnGegevens = None
     informatiecategorie: BegripGegevens = None
     bevatOnderdeel: VerwijzingGegevens | List[VerwijzingGegevens] = None
@@ -602,8 +568,7 @@ class Informatieobject:
     activiteit: VerwijzingGegevens = None
 
     def to_xml(self) -> ET.ElementTree:
-        """
-        Transform Informatieobject into an XML tree with the following structure:
+        """Transform Informatieobject into an XML tree with the following structure:
 
         ```xml
         <MDTO xmlns=…>
@@ -739,13 +704,11 @@ class Informatieobject:
 
 @dataclass
 class Bestand:
-    """MDTO Bestand class.
+    """https://www.nationaalarchief.nl/archiveren/mdto/bestand
 
-    When creating Bestand XML files, it may be more easier to instead use the
-    `create_bestand()` convenience function, or to invoke this program as a CLI tool.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/bestand
+    Note:
+        When creating Bestand XML files, it's easier to use the
+        `create_bestand()` convenience function instead.
 
     Args:
         identificatie (IdentificatieGegevens): Gegevens waarmee het object geïdentificeerd kan worden
@@ -755,7 +718,6 @@ class Bestand:
         checksum (ChecksumGegevens): Checksum gegevens over het bestand
         isRepresentatieVan (VerwijzingGegevens): Verwijzing naar het informatieobject waarvan het bestand een (deel van een) representatie is
         URLBestand (str, optional): Actuele verwijzing naar het bestand in de vorm van een RFC 3986 conforme URI
-
     """
 
     naam: str
@@ -834,17 +796,13 @@ class Bestand:
 
         return tree
 
-    @property
-    def URLBestand(self):
-        """Value of MDTO 'URLBestand' tag.
-
-        Valid value: any RFC 3986 compliant URI
-        MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/URLBestand
-        """
-        return self._URLBestand
-
     @URLBestand.setter
-    def URLBestand(self, url):
+    def URLBestand(self, url: str):
+        """https://www.nationaalarchief.nl/archiveren/mdto/URLBestand
+
+        Args:
+            url (str): any RFC 3986 compliant URI
+        """
         # if url is not set (e.g. when calling Bestand() without the URLBestand argument),
         # it will not be None, but rather an empty "property" object
         if isinstance(url, property) or url is None:  # check if empty
@@ -855,10 +813,12 @@ class Bestand:
             _warn(f"URL '{url} is malformed.")
             self._URLBestand = url
 
-# TODO: should this also accept a file path?
+    @property
+    def URLBestand(self):
+        return self._URLBestand
+
 def detect_verwijzing(informatieobject: TextIO) -> VerwijzingGegevens:
-    """
-    A Bestand object must contain a reference to a corresponding informatieobject.
+    """A Bestand object must contain a reference to a corresponding informatieobject.
     Specifically, it expects an <isRepresentatieVan> tag with the following children:
 
     1. <verwijzingNaam>: name of the informatieobject
@@ -867,9 +827,6 @@ def detect_verwijzing(informatieobject: TextIO) -> VerwijzingGegevens:
 
     This function infers these so-called 'VerwijzingGegevens' by
     parsing the XML of the file `informatieobject`.
-
-    MDTO Docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/isRepresentatieVan
 
     Args:
         informatieobject (TextIO): XML file to infer VerwijzingGegevens from
@@ -986,8 +943,7 @@ def create_bestand(
     quiet: bool = False,
     force: bool = False,
 ) -> Bestand:
-    """
-    Convenience function for creating Bestand objects. The difference between this function
+    """Convenience function for creating Bestand objects. The difference between this function
     and calling Bestand() directly is that this function infers most Bestand-related
     information for you, based on the characteristics of `infile`.
 
@@ -995,7 +951,7 @@ def create_bestand(
     if multiple <identificatie> tags are desired. Otherwise, a single str suffices.
 
     Args:
-        infile (TextIO | str): the file the Bestand object should represent. Can be a path or file-like object
+        infile (TextIO | str): the file the Bestand object should represent
         identificatiekenmerken (List[str] | str): str or list of str for <identificatieKenmerk> tags
         identificatiebronnen (List[str] | str): str or list of str for <identificatieBron> tags
         informatieobject (TextIO | str): path or file-like object that
