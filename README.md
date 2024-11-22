@@ -39,7 +39,7 @@
 </MDTO>
 ```
 
-# Installatie
+# 💿 Installatie
 
 ## Afhankelijkheden
 
@@ -81,7 +81,7 @@ pip install .
 ```
 </details>
 
-# `mdto.py` als python library
+# 📖 `mdto.py` als python library
 
 ## XML bestanden bouwen
 
