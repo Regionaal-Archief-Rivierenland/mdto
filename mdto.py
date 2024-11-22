@@ -1094,7 +1094,7 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
     def repeatable(d, k, v) -> dict:
         d[k].append(v)
 
-    # Parsers
+    # Parsers:
     def parse_text(node) -> str:
         return node.text
 
@@ -1131,9 +1131,9 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
         }
 
         for child in elem:
-            tagname = child.tag.removeprefix("{https://www.nationaalarchief.nl/mdto}")
-            xml_parser, add_to_args = class_xml_parsers[tagname]
-            add_to_args(constructor_args, tagname, xml_parser(child))
+            mdto_field = child.tag.removeprefix("{https://www.nationaalarchief.nl/mdto}")
+            xml_parser, add_to_constructor = class_xml_parsers[tagname]
+            add_to_constructor(constructor_args, mdto_field, xml_parser(child))
         return mdto_class(**constructor_args)
 
     begrip_parsers = {
