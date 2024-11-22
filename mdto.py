@@ -1056,7 +1056,6 @@ def create_checksum(
 
 # TODO: this type annotation should be redone when the abstract Object class is implemented
 # Q: should this also accept file objects?
-# Q: How to deal with invalid files?
 def from_file(xmlfile: str) -> Informatieobject | Bestand:
     """Construct a Informatieobject/Bestand object from a MDTO XML file.
 
