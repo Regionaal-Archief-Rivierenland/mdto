@@ -408,7 +408,7 @@ class RaadpleeglocatieGegevens:
         return root
 
     @raadpleeglocatieOnline.setter
-    def raadpleeglocatieOnline(self, url: str):
+    def raadpleeglocatieOnline(self, url: str | List[str]):
         """https://www.nationaalarchief.nl/archiveren/mdto/raadpleeglocatieOnline
 
         Args:
@@ -418,7 +418,9 @@ class RaadpleeglocatieGegevens:
         # it will not be None, but rather an empty "property" object
         if isinstance(url, property) or url is None: # check if empty
             self._raadpleeglocatieOnline = None
-        elif validators.url(url):
+        elif isinstance(url, list) and all(validators.url(u) for u in url):
+            self._raadpleeglocatieOnline = url
+        elif isinstance(url, str) and validators.url(url):
             self._raadpleeglocatieOnline = url
         else:
             _warn(f"URL '{url}' is malformed.")
@@ -466,7 +468,7 @@ class Informatieobject:
     archiefvormer: VerwijzingGegevens | List[VerwijzingGegevens]
     beperkingGebruik: BeperkingGebruikGegevens | List[BeperkingGebruikGegevens]
     waardering: BegripGegevens
-    aggregatieNiveau: BegripGegevens = None
+    aggregatieniveau: BegripGegevens = None
     classificatie: BegripGegevens = None
     trefwoord: str | List[str] = None
     omschrijving: str = None
