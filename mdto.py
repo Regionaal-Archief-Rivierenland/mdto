@@ -482,10 +482,7 @@ class RaadpleeglocatieGegevens:
 
 @dataclass
 class GerelateerdInformatieobjectGegevens:
-    """MDTO gerelateerdInformatieobjectGegevens class.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/gerelateerdInformatieobjectGegevens
+    """https://www.nationaalarchief.nl/archiveren/mdto/gerelateerdInformatieobjectGegevens
 
     Args:
         gerelateerdInformatieobjectVerwijzing (VerwijzingGegevens): Verwijzing naar het gerelateerde informatieobject
@@ -515,10 +512,7 @@ class GerelateerdInformatieobjectGegevens:
 
 @dataclass
 class BetrokkeneGegevens:
-    """MDTO betrokkeneGegevens class.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/betrokkeneGegevens
+    """https://www.nationaalarchief.nl/archiveren/mdto/betrokkeneGegevens
 
     Args:
         betrokkeneTypeRelatie (BegripGegevens): Typering van de betrokkenheid van de actor bij het informatieobject
