@@ -1125,6 +1125,7 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
         Returns:
             MDTO instance: a initialized MDTO instance of type `mdto_class`
         """
+        # only pass list to constructor if argument is repeatable
         constructor_args = {
             k: [] if v[1] == repeatable else None for k, v in class_xml_parsers.items()
         }
