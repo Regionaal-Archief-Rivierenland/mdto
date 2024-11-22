@@ -258,50 +258,17 @@ class TermijnGegevens:
 
         return root
 
-
-# FIXME: allow users to specify a filepath or an file-like object
+@dataclass
 class ChecksumGegevens:
-    """MDTO checksumGegevens class.
+    """https://www.nationaalarchief.nl/archiveren/mdto/checksum
 
-    Takes a file-like object, and then generates the requisite checksum-metadata (i.e.
-    `checksumAlgoritme`, `checksumWaarde`, and `checksumDatum`) from that file.
-
-    Note that, when building Bestand objects, it's often easier to call the convience function `create_bestand()`.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/checksum
-
-    Example:
-        ```python
-        with open("data/scan-003.jpg", "r") as myfile:
-            # users may manually specify the checksum algorithm to use
-            checksum = ChecksumGegevens(myfile, algorithm="sha512")
-        ```
-
-    Args:
-        infile (TextIO): file-like object to generate checksum data for
-        algorithm (str, optional): checksum algorithm to use; defaults to sha256. For valid values, see https://docs.python.org/3/library/hashlib.html
+    Note: 
+        When building Bestand objects, it's recommended to call the convience function `create_bestand()` instead.
+        Moreover, if you just need to update a Bestand object's checksum, you should use `create_checksum()`.
     """
-
-    def __init__(self, infile: TextIO, algorithm: str = "sha256"):
-        """Create a new ChecksumGegevens object."""
-
-        verwijzing = VerwijzingGegevens(
-            verwijzingNaam="Begrippenlijst ChecksumAlgoritme MDTO"
-        )
-
-        self.checksumAlgoritme = BegripGegevens(
-            begripLabel=algorithm.upper().replace("SHA", "SHA-"),
-            begripBegrippenlijst=verwijzing,
-        )
-
-        # file_digest() expects a file in binary mode, hence `infile.buffer.raw`
-        # FIXME: this value is not the same on each call?
-        self.checksumWaarde = hashlib.file_digest(
-            infile.buffer.raw, algorithm
-        ).hexdigest()
-
-        self.checksumDatum = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    checksumAlgoritme: BegripGegevens
+    checksumWaarde: str
+    checksumDatum: str
 
     def to_xml(self) -> ET.Element:
         """Transform ChecksumGegevens into XML tree with the following structure:
@@ -1076,7 +1043,7 @@ def create_bestand(
 
     omvang = os.path.getsize(infile.name)
     bestandsformaat = pronominfo(infile.name)
-    checksum = ChecksumGegevens(infile)
+    checksum = create_checksum(infile)
 
     informatieobject = _process_file(informatieobject)
     isrepresentatievan = detect_verwijzing(informatieobject)
@@ -1089,13 +1056,58 @@ def create_bestand(
     )
 
 
+def create_checksum(
+    file_or_filename: TextIO | str, algorithm: str = "sha256"
+) -> ChecksumGegevens:
+    """Convience function for creating ChecksumGegegevens objects.
+
+    Takes a file-like object or path to file, and then generates the requisite
+    checksum metadata (i.e.  `checksumAlgoritme`, `checksumWaarde`, and
+    `checksumDatum`) from that file.
+
+    Example:
+    ```python
+    pdf_checksum = create_checksum('document.pdf')
+    # create ChecksumGegevens with a 512 bits instead of a 256 bits checksum 
+    jpg_checksum = create_checksum('scan-003.jpg', algorithm="sha512")
+    ```
+
+    Args:
+        infile (TextIO | str): file-like object to generate checksum data for
+        algorithm (str, optional): checksum algorithm to use; defaults to sha256.
+         For valid values, see https://docs.python.org/3/library/hashlib.html
+
+    Returns:
+        ChecksumGegevens: checksum metadata from `file_or_filename`
+    """
+    infile = _process_file(file_or_filename)
+    verwijzing = VerwijzingGegevens(
+        verwijzingNaam="Begrippenlijst ChecksumAlgoritme MDTO"
+    )
+
+    checksumAlgoritme = BegripGegevens(
+        begripLabel=algorithm.upper().replace("SHA", "SHA-"),
+        begripBegrippenlijst=verwijzing,
+    )
+
+    # file_digest() expects a file in binary mode, hence `infile.buffer.raw`
+    # FIXME: this value is not the same on each call?
+    checksumWaarde = hashlib.file_digest(
+        infile.buffer.raw, algorithm
+    ).hexdigest()
+
+    checksumDatum = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+    return ChecksumGegevens(checksumAlgoritme, checksumWaarde, checksumDatum)
+
+
 # TODO: this type annotation should be redone when the abstract Object class is implemented
 # Q: should this also accept file objects?
 # Q: How to deal with invalid files?
 def from_file(xmlfile: str) -> Informatieobject | Bestand:
     """Construct a Informatieobject/Bestand object from a MDTO XML file.
 
-    Note: 
+    Note:
         When `xmlfile` is invalid MDTO, this function will probably throw an error.
 
     Example:
@@ -1122,24 +1134,27 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
     """
 
     # Arg constructors:
-    def singleton(d, k, v): # faster than the lambda equivalent
+    def singleton(d, k, v) -> dict:
         d[k] = v
 
-    def repeatable(d, k, v):
+    def repeatable(d, k, v) -> dict:
         d[k].append(v)
 
-    # Parsers (def's are slightly faster than stored lambdas):
-    def parse_text(node):
+    # Parsers
+    def parse_text(node) -> str:
         return node.text
 
-    def parse_identificatie(node):
+    def parse_int(node) -> int:
+        return int(node.text)
+
+    def parse_identificatie(node) -> IdentificatieGegevens:
         return IdentificatieGegevens(
             node[0].text,
             node[1].text,
         )
 
     # this is measurably faster than the elem_to_mdto variant
-    def parse_verwijzing(node):
+    def parse_verwijzing(node) -> VerwijzingGegevens:
         if len(node) == 1:
             return VerwijzingGegevens(node[0].text)
         else:
@@ -1155,13 +1170,13 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
         Returns:
             MDTO instance: a initialized MDTO instance of type `mdto_class`
         """
-        constructor_args = {k : [] for k in class_xml_parsers}
+        constructor_args = {k : [] if v[1] == repeatable else None
+                            for k, v in class_xml_parsers.items()}
 
         for child in elem:
            tagname = child.tag.removeprefix("{https://www.nationaalarchief.nl/mdto}")
            xml_parser, add_to_args = class_xml_parsers[tagname]
            add_to_args(constructor_args, tagname, xml_parser(child))
-        # breakpoint()
         return mdto_class(**constructor_args)
 
     begrip_parsers = {
@@ -1208,7 +1223,7 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
 
     event_parsers = {
         "eventType": (parse_begrip, singleton),
-        "evenTijd": (parse_text, singleton),
+        "eventTijd": (parse_text, singleton),
         "eventVerantwoordelijkeActor": (parse_verwijzing, singleton),
         "eventResultaat": (parse_text, singleton),
     }
@@ -1219,9 +1234,7 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
         "gerelateerdInformatieobjectTypeRelatie": (parse_begrip, singleton),
     }
     parse_gerelateerd_informatieobject = lambda e: elem_to_mdto(
-        e,
-        GerelateerdInformatieobjectGegevens,
-        gerelateerd_informatieobject_parsers
+        e, GerelateerdInformatieobjectGegevens, gerelateerd_informatieobject_parsers
     )
 
     betrokkene_parsers = {
@@ -1231,6 +1244,14 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
     parse_betrokkene = lambda e: elem_to_mdto(
         e, BetrokkeneGegevens, betrokkene_parsers
     )
+
+    checksum_parsers = {
+        "checksumAlgoritme": (parse_begrip, singleton),
+        "checksumWaarde": (parse_text, singleton),
+        "checksumDatum": (parse_text, singleton),
+    }
+    parse_checksum = lambda e: elem_to_mdto(
+        e, ChecksumGegevens, checksum_parsers)
 
     informatieobject_parsers = {
         "naam": (parse_text, singleton),
@@ -1262,6 +1283,17 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
         e, Informatieobject, informatieobject_parsers
     )
 
+    bestand_parsers = {
+        "naam": (parse_text, singleton),
+        "identificatie": (parse_identificatie, repeatable),
+        "omvang": (parse_int, singleton),
+        "checksum": (parse_checksum, repeatable),
+        "bestandsformaat": (parse_begrip, singleton),
+        "URLBestand": (parse_text, singleton),
+        "isRepresentatieVan": (parse_verwijzing, singleton),
+    }
+    parse_bestand = lambda e: elem_to_mdto(e, Bestand, bestand_parsers)
+
     # read xmlfile
     tree = ET.parse(xmlfile)
     root = tree.getroot()
@@ -1273,7 +1305,7 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
     if object_type == "informatieobject":
         return parse_informatieobject(children)
     elif object_type == "bestand":
-        pass
+        return parse_bestand(children)
     else:
-        raise ValueError("Unexpected first child in <MDTO>:"
-        "expected <informatieobject> or <bestand>.")
+        raise ValueError(f"Unexpected first child <{object_type}> in <MDTO>: "
+                         "expected <informatieobject> or <bestand>.")
