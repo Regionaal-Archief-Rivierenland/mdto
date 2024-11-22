@@ -252,7 +252,7 @@ class ChecksumGegevens:
     Generates the requisite checksum-metadata (i.e. `checksumAlgoritme`,
     `checksumWaarde`, and `checksumDatum`) from file-like object `infile`.
 
-    Note: 
+    Note:
         When building Bestand objects, it's recommended to call the convience function `create_bestand()` instead.
 
     Example:
@@ -857,7 +857,7 @@ def detect_verwijzing(informatieobject: TextIO) -> VerwijzingGegevens:
 
     This function infers these so-called 'VerwijzingGegevens' by
     parsing the XML of the file `informatieobject`.
-    
+
     Args:
         informatieobject (TextIO): XML file to infer VerwijzingGegevens from
 
