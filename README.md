@@ -39,7 +39,7 @@
 </MDTO>
 ```
 
-# Installatie
+# 💿 Installatie
 
 ## Afhankelijkheden
 
@@ -81,7 +81,7 @@ pip install .
 ```
 </details>
 
-# `mdto.py` als python library
+# 📖 `mdto.py` als python library
 
 ## XML bestanden bouwen
 
@@ -103,13 +103,13 @@ waardering = BegripGegevens(begripLabel="Tijdelijk te bewaren",
 beperkingType = BegripGegevens("Auteurswet", VerwijzingGegevens("Gemeente Den Haag zaaksysteem begrippenlijst"))
 beperkingGebruik = BeperkingGebruikGegevens(beperkingGebruikType=beperkingType)
 
-# maak informatieobject op basis van deze gegevens 
+# maak informatieobject op basis van deze gegevens
 informatieobject = Informatieobject(identificatie = informatieobject_id,
                  naam = "Verlenen kapvergunning Hooigracht 21 Den Haag",
                  waardering = waardering,
                  archiefvormer = VerwijzingGegevens("'s-Gravenhage"),
                  beperkingGebruik = beperkingGebruik)
-                 
+
 # schrijf informatieobject naar een bestand
 xml = informatieobject.to_xml()
 with open("informatieobject.xml", 'w') as output_file:
@@ -134,7 +134,7 @@ Je kan op een vergelijkbare wijze Bestand objecten bouwen via de `Bestand()` cla
 ```python
 from mdto import *
 
-# 'informatieobject_001.xml' is het informatieobject waar het Bestand object een representatie van is 
+# 'informatieobject_001.xml' is het informatieobject waar het Bestand object een representatie van is
 with open('informatieobject_001.xml') as info_object:
     bestand = create_bestand("vergunning.pdf", '34c5-4379-9f1a-5c378', 'Proza (DMS)', representatievan=info_object)
 
@@ -193,7 +193,7 @@ for bestand_xml in glob.glob('**/*.bestand.mdto.xml', recursive=True):
 
 [doc-popup.webm](https://github.com/Regionaal-Archief-Rivierenland/mdto/assets/10417027/de41c4e5-900d-48c3-b04b-57dc703e201e)
 
-Autocompletition werkt natuurlijk ook: 
+Autocompletition werkt natuurlijk ook:
 
 [autocompletion-cast.webm](https://github.com/Regionaal-Archief-Rivierenland/mdto/assets/10417027/da6ffff7-132e-481c-b3a0-fd1674fd5da7)
 

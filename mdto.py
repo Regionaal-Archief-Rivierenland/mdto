@@ -510,8 +510,7 @@ class Informatieobject:
     Example:
 
     ```python
-    # Maak informatieobject
-    informatieobject = Informatieobject("Kapvergunning", IdentificatieGegevens(…), …)
+    informatieobject = Informatieobject(IdentificatieGegevens(…), naam="Kapvergunning", …)
 
     xml = informatieobject.to_xml()
     with open("informatieobject.xml", 'w') as output_file:
