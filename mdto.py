@@ -549,7 +549,7 @@ class Informatieobject:
     waardering: BegripGegevens
     aggregatieniveau: BegripGegevens = None
     classificatie: BegripGegevens = None
-    trefwoord: str = None  # FIXME: should also accept a list
+    trefwoord: str | List[str] = None
     omschrijving: str = None
     raadpleeglocatie: RaadpleeglocatieGegevens = None
     dekkingInTijd: DekkingInTijdGegevens = None
