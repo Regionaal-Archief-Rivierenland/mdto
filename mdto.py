@@ -457,6 +457,10 @@ class RaadpleeglocatieGegevens:
 
         return root
 
+    @property
+    def raadpleeglocatieOnline(self):
+        return self._raadpleeglocatieOnline
+
     @raadpleeglocatieOnline.setter
     def raadpleeglocatieOnline(self, url: str | List[str]):
         """https://www.nationaalarchief.nl/archiveren/mdto/raadpleeglocatieOnline
@@ -475,10 +479,6 @@ class RaadpleeglocatieGegevens:
         else:
             _warn(f"URL '{url}' is malformed.")
             self._raadpleeglocatieOnline = url
-
-    @property
-    def raadpleeglocatieOnline(self):
-        return self._raadpleeglocatieOnline
 
 
 @dataclass
@@ -826,6 +826,10 @@ class Bestand:
 
         return tree
 
+    @property
+    def URLBestand(self):
+        return self._URLBestand
+
     @URLBestand.setter
     def URLBestand(self, url: str):
         """https://www.nationaalarchief.nl/archiveren/mdto/URLBestand
@@ -843,9 +847,6 @@ class Bestand:
             _warn(f"URL '{url} is malformed.")
             self._URLBestand = url
 
-    @property
-    def URLBestand(self):
-        return self._URLBestand
 
 def detect_verwijzing(informatieobject: TextIO) -> VerwijzingGegevens:
     """A Bestand object must contain a reference to a corresponding informatieobject.
