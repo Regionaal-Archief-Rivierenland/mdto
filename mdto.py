@@ -565,7 +565,6 @@ class Informatieobject:
         bewaartermijn (TermijnGegevens, optional): Termijn waarin het informatieobject bewaard dient te worden
         informatiecategorie (BegripGegevens, optional): Informatiecategorie uit een selectie- of hotspotlijst waar de bewaartermijn op gebaseerd is
         bevatOnderdeel (VerwijzingGegevens, optional): Verwijzing naar een ander onderdeel dat deel uitmaakt van het informatieobject
-        aanvullendeMetagegevens (VerwijzingGegevens, optional): Verwijzing naar een bestand dat aanvullende (domeinspecifieke) metagegevens bevat
         isOnderdeelVan (VerwijzingGegevens, optional): Bovenliggende aggregatie waar dit informatieobject onderdeel van is
         heeftRepresentatie (VerwijzingGegevens, optional): Verwijzing naar het bestand dat een representatie van het informatieobject is
         aanvullendeMetagegevens (VerwijzingGegevens, optional): Verwijzing naar een bestand dat aanvullende (domeinspecifieke) metagegevens over het informatieobject bevat
