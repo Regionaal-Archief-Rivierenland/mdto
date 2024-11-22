@@ -1068,7 +1068,7 @@ def create_checksum(
     Example:
     ```python
     pdf_checksum = create_checksum('document.pdf')
-    # create ChecksumGegevens with a 512 bits instead of a 256 bits checksum 
+    # create ChecksumGegevens with a 512 bits instead of a 256 bits checksum
     jpg_checksum = create_checksum('scan-003.jpg', algorithm="sha512")
     ```
 
@@ -1092,9 +1092,7 @@ def create_checksum(
 
     # file_digest() expects a file in binary mode, hence `infile.buffer.raw`
     # FIXME: this value is not the same on each call?
-    checksumWaarde = hashlib.file_digest(
-        infile.buffer.raw, algorithm
-    ).hexdigest()
+    checksumWaarde = hashlib.file_digest(infile.buffer.raw, algorithm).hexdigest()
 
     checksumDatum = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -1163,20 +1161,23 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
                 parse_identificatie(node[1]),
             )
 
-    def elem_to_mdto(elem: ET.Element, mdto_class: classmethod, class_xml_parsers: dict):
+    def elem_to_mdto(
+        elem: ET.Element, mdto_class: classmethod, class_xml_parsers: dict
+    ):
         """Construct MDTO class from given XML element, using parsers specified in
         class_xml_parsers.
 
         Returns:
             MDTO instance: a initialized MDTO instance of type `mdto_class`
         """
-        constructor_args = {k : [] if v[1] == repeatable else None
-                            for k, v in class_xml_parsers.items()}
+        constructor_args = {
+            k: [] if v[1] == repeatable else None for k, v in class_xml_parsers.items()
+        }
 
         for child in elem:
-           tagname = child.tag.removeprefix("{https://www.nationaalarchief.nl/mdto}")
-           xml_parser, add_to_args = class_xml_parsers[tagname]
-           add_to_args(constructor_args, tagname, xml_parser(child))
+            tagname = child.tag.removeprefix("{https://www.nationaalarchief.nl/mdto}")
+            xml_parser, add_to_args = class_xml_parsers[tagname]
+            add_to_args(constructor_args, tagname, xml_parser(child))
         return mdto_class(**constructor_args)
 
     begrip_parsers = {
@@ -1241,17 +1242,14 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
         "betrokkeneTypeRelatie": (parse_begrip, singleton),
         "betrokkeneActor": (parse_verwijzing, singleton),
     }
-    parse_betrokkene = lambda e: elem_to_mdto(
-        e, BetrokkeneGegevens, betrokkene_parsers
-    )
+    parse_betrokkene = lambda e: elem_to_mdto(e, BetrokkeneGegevens, betrokkene_parsers)
 
     checksum_parsers = {
         "checksumAlgoritme": (parse_begrip, singleton),
         "checksumWaarde": (parse_text, singleton),
         "checksumDatum": (parse_text, singleton),
     }
-    parse_checksum = lambda e: elem_to_mdto(
-        e, ChecksumGegevens, checksum_parsers)
+    parse_checksum = lambda e: elem_to_mdto(e, ChecksumGegevens, checksum_parsers)
 
     informatieobject_parsers = {
         "naam": (parse_text, singleton),
@@ -1272,8 +1270,7 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
         "bevatOnderdeel": (parse_verwijzing, repeatable),
         "heeftRepresentatie": (parse_verwijzing, repeatable),
         "aanvullendeMetagegevens": (parse_verwijzing, repeatable),
-        "gerelateerdInformatieobject": (parse_gerelateerd_informatieobject,
-                                        repeatable),
+        "gerelateerdInformatieobject": (parse_gerelateerd_informatieobject, repeatable),
         "archiefvormer": (parse_verwijzing, repeatable),
         "betrokkene": (parse_betrokkene, repeatable),
         "activiteit": (parse_verwijzing, repeatable),
@@ -1307,5 +1304,7 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
     elif object_type == "bestand":
         return parse_bestand(children)
     else:
-        raise ValueError(f"Unexpected first child <{object_type}> in <MDTO>: "
-                         "expected <informatieobject> or <bestand>.")
+        raise ValueError(
+            f"Unexpected first child <{object_type}> in <MDTO>: "
+            "expected <informatieobject> or <bestand>."
+        )
