@@ -15,6 +15,7 @@ import validators
 MAX_NAAM_LENGTH = 80
 _force, _quiet = False, False
 
+
 # Helper methods
 def _process_file(file_or_filename) -> TextIO:
     """Return file-object if input is already a file.
@@ -196,6 +197,57 @@ class BegripGegevens:
 
         return root
 
+
+@dataclass
+class TermijnGegevens:
+    """MDTO termijnGegevens class.
+
+    MDTO docs:
+        https://www.nationaalarchief.nl/archiveren/mdto/termijnGegevens
+
+    Args:
+        termijnTriggerStartLooptijd (BegripGegevens, optional): Gebeurtenis waarna de looptijd van de termijn start
+        termijnStartdatumLooptijd (str, optional): Datum waarop de looptijd is gestart
+        termijnLooptijd (str, optional): Hoeveelheid tijd waarin de termijnEindDatum bereikt wordt
+        termijnEinddatum (str, optional): Datum waarop de termijn eindigt
+    """
+
+    termijnTriggerStartLooptijd: BegripGegevens = None
+    termijnStartdatumLooptijd: str = None
+    termijnLooptijd: str = None
+    termijnEinddatum: str = None
+
+    def to_xml(self, root: str) -> ET.Element:
+        """Transform TermijnGegevens into XML tree.
+
+        Args:
+            root (str): name of the new root tag
+
+        Returns:
+            ET.Element: XML representation of TermijnGegevens with new root tag
+        """
+        root = ET.Element(root)
+
+        if self.termijnTriggerStartLooptijd:
+            root.append(
+                self.termijnTriggerStartLooptijd.to_xml("termijnTriggerStartLooptijd")
+            )
+
+        if self.termijnStartdatumLooptijd:
+            termijnStartdatumLooptijd = ET.SubElement(root, "termijnStartdatumLooptijd")
+            termijnStartdatumLooptijd.text = self.termijnStartdatumLooptijd
+
+        if self.termijnLooptijd:
+            termijnLooptijd = ET.SubElement(root, "termijnLooptijd")
+            termijnLooptijd.text = self.termijnLooptijd
+
+        if self.termijnEinddatum:
+            termijnEinddatum = ET.SubElement(root, "termijnEinddatum")
+            termijnEinddatum.text = self.termijnEinddatum
+
+        return root
+
+
 # FIXME: allow users to specify a filepath or an file-like object
 class ChecksumGegevens:
     """https://www.nationaalarchief.nl/archiveren/mdto/checksum
@@ -286,8 +338,7 @@ class BeperkingGebruikGegevens:
     beperkingGebruikNadereBeschrijving: str = None
     # TODO: this can be a list
     beperkingGebruikDocumentatie: VerwijzingGegevens = None
-    # TODO: maak een TermijnGegevens dataclass
-    beperkingGebruikTermijn: str = None
+    beperkingGebruikTermijn: TermijnGegevens = None
 
     def to_xml(self) -> ET.Element:
         """Transform BeperkingGebruikGegevens into XML tree.
@@ -305,13 +356,14 @@ class BeperkingGebruikGegevens:
                 root, "beperkingGebruikNadereBeschrijving"
             )
             nadereBeschrijving.text = self.beperkingGebruikNadereBeschrijving
+
         if self.beperkingGebruikDocumentatie:
             root.append(
                 self.beperkingGebruikDocumentatie.to_xml("beperkingGebruikDocumentatie")
             )
+
         if self.beperkingGebruikTermijn:
-            beperkingGebruikTermijn = ET.SubElement(root, "beperkingGebruikTermijn")
-            beperkingGebruikTermijn.text = self.beperkingGebruikTermijn
+            root.append(self.beperkingGebruikTermijn.to_xml("beperkingGebruikTermijn"))
 
         return root
 
@@ -399,7 +451,7 @@ class RaadpleeglocatieGegevens:
 
         # raadpleeglocatie may have no children, strangely enough
         if self.raadpleeglocatieFysiek:
-            root.append(self.raadpleeglocatieFysiek.to_xml('raadpleeglocatieFysiek'))
+            root.append(self.raadpleeglocatieFysiek.to_xml("raadpleeglocatieFysiek"))
 
         if self.raadpleeglocatieOnline:
             raadpleeglocatie_online_elem = ET.SubElement(root, "raadpleeglocatieOnline")
@@ -416,7 +468,7 @@ class RaadpleeglocatieGegevens:
         """
         # if url is not set, (e.g. when calling RaadpleegLocatieGegevens() without arguments)
         # it will not be None, but rather an empty "property" object
-        if isinstance(url, property) or url is None: # check if empty
+        if isinstance(url, property) or url is None:  # check if empty
             self._raadpleeglocatieOnline = None
         elif isinstance(url, list) and all(validators.url(u) for u in url):
             self._raadpleeglocatieOnline = url
@@ -431,7 +483,65 @@ class RaadpleeglocatieGegevens:
         return self._raadpleeglocatieOnline
 
 
+@dataclass
+class GerelateerdInformatieobjectGegevens:
+    """MDTO gerelateerdInformatieobjectGegevens class.
+
+    MDTO docs:
+        https://www.nationaalarchief.nl/archiveren/mdto/gerelateerdInformatieobjectGegevens
+
+    Args:
+        gerelateerdInformatieobjectVerwijzing (VerwijzingGegevens): Verwijzing naar het gerelateerde informatieobject
+        gerelateerdInformatieobjectTypeRelatie (BegripGegevens): Typering van de relatie
+    """
+
+    gerelateerdInformatieobjectVerwijzing: VerwijzingGegevens
+    gerelateerdInformatieobjectTypeRelatie: BegripGegevens
+
+    def to_xml(self) -> ET.Element:
+        root = ET.Element("gerelateerdInformatieobject")
+
+        root.append(
+            self.gerelateerdInformatieobjectVerwijzing.to_xml(
+                "gerelateerdInformatieobjectVerwijzing"
+            )
+        )
+
+        root.append(
+            self.gerelateerdInformatieobjectTypeRelatie.to_xml(
+                "gerelateerdInformatieobjectTypeRelatie"
+            )
+        )
+
+        return root
+
+
+@dataclass
+class BetrokkeneGegevens:
+    """MDTO betrokkeneGegevens class.
+
+    MDTO docs:
+        https://www.nationaalarchief.nl/archiveren/mdto/betrokkeneGegevens
+
+    Args:
+        betrokkeneTypeRelatie (BegripGegevens): Typering van de betrokkenheid van de actor bij het informatieobject
+        betrokkeneActor (VerwijzingGegevens): Persoon of organisatie die betrokken is bij het informatieobject
+    """
+
+    betrokkeneTypeRelatie: BegripGegevens
+    betrokkeneActor: VerwijzingGegevens
+
+    def to_xml(self) -> ET.Element:
+        root = ET.Element("betrokkene")
+
+        root.append(self.betrokkeneTypeRelatie.to_xml("betrokkeneTypeRelatie"))
+        root.append(self.betrokkeneActor.to_xml("betrokkeneActor"))
+
+        return root
+
+
 # TODO: this should be a subclass of a general object class
+# TODO: place more restrictions on taal?
 @dataclass
 class Informatieobject:
     """https://www.nationaalarchief.nl/archiveren/mdto/informatieobject
@@ -457,10 +567,19 @@ class Informatieobject:
         trefwoord (str | List[str], optional): Trefwoord dat het informatieobject beschrijft
         omschrijving (str, optional): Omschrijving van het informatieobject
         dekkingInTijd (DekkingInTijdGegevens, optional): Periode waarop het informatieobject betrekking heeft
+        dekkingInRuimte (VerwijzingGegevens, optional): Plaats/locatie waar het informatieobject betrekking op heeft
+        taal (str, optional): Taal waarin het informatieobject gesteld is
         event (EventGegevens | List[EventGegevens], optional): Gebeurtenis gerelateerd aan het informatieobject
+        bewaartermijn (TermijnGegevens, optional): Termijn waarin het informatieobject bewaard dient te worden
+        informatiecategorie (BegripGegevens, optional): Informatiecategorie uit een selectie- of hotspotlijst waar de bewaartermijn op gebaseerd is
         bevatOnderdeel (VerwijzingGegevens, optional): Verwijzing naar een ander onderdeel dat deel uitmaakt van het informatieobject
         aanvullendeMetagegevens (VerwijzingGegevens, optional): Verwijzing naar een bestand dat aanvullende (domeinspecifieke) metagegevens bevat
         isOnderdeelVan (VerwijzingGegevens, optional): Bovenliggende aggregatie waar dit informatieobject onderdeel van is
+        heeftRepresentatie (VerwijzingGegevens, optional): Verwijzing naar het bestand dat een representatie van het informatieobject is
+        aanvullendeMetagegevens (VerwijzingGegevens, optional): Verwijzing naar een bestand dat aanvullende (domeinspecifieke) metagegevens over het informatieobject bevat
+        gerelateerdInformatieobject (GerelateerdInformatieobjectGegevens, optional): Informatie over een gerelateerd informatieobject
+        betrokkene (BetrokkeneGegevens | List[BetrokkeneGegevens], optional): Persoon of organisatie die relevant was binnen het ontstaan en gebruik van het informatieobject
+        activiteit (VerwijzingGegevens, optional): Bedrijfsactiviteit waarbij het informatieobject door de archiefvormer is ontvangen of gemaakt
     """
 
     naam: str
@@ -472,12 +591,20 @@ class Informatieobject:
     classificatie: BegripGegevens = None
     trefwoord: str | List[str] = None
     omschrijving: str = None
+    raadpleeglocatie: RaadpleeglocatieGegevens = None
     dekkingInTijd: DekkingInTijdGegevens = None
+    dekkingInRuimte: VerwijzingGegevens = None
+    taal: str = None
     event: EventGegevens | List[EventGegevens] = None
+    bewaartermijn: TermijnGegevens = None
+    informatiecategorie: BegripGegevens = None
     bevatOnderdeel: VerwijzingGegevens | List[VerwijzingGegevens] = None
-    aanvullendeMetagegevens: VerwijzingGegevens | List[VerwijzingGegevens] = None
     isOnderdeelVan: VerwijzingGegevens = None
-    # TODO: add other elements
+    heeftRepresentatie: VerwijzingGegevens = None
+    aanvullendeMetagegevens: VerwijzingGegevens | List[VerwijzingGegevens] = None
+    gerelateerdInformatieobject: GerelateerdInformatieobjectGegevens = None
+    betrokkene: BetrokkeneGegevens | List[BetrokkeneGegevens] = None
+    activiteit: VerwijzingGegevens = None
 
     def to_xml(self) -> ET.ElementTree:
         """Transform Informatieobject into an XML tree with the following structure:
@@ -534,8 +661,18 @@ class Informatieobject:
             omschrijving_elem = ET.SubElement(root, "omschrijving")
             omschrijving_elem.text = self.omschrijving
 
+        if self.raadpleeglocatie:
+            root.append(self.raadpleeglocatie.to_xml())
+
         if self.dekkingInTijd:
             root.append(self.dekkingInTijd.to_xml())
+
+        if self.dekkingInRuimte:
+            root.append(self.dekkingInRuimte.to_xml())
+
+        if self.taal:
+            taal_elem = ET.SubElement(root, "taal")
+            taal_elem.text = self.taal
 
         if self.event:
             if isinstance(self.event, EventGegevens):
@@ -546,6 +683,12 @@ class Informatieobject:
 
         root.append(self.waardering.to_xml("waardering"))
 
+        if self.bewaartermijn:
+            root.append(self.bewaartermijn.to_xml("bewaartermijn"))
+
+        if self.informatiecategorie:
+            root.append(self.informatiecategorie.to_xml("informatiecategorie"))
+
         if self.isOnderdeelVan:
             root.append(self.isOnderdeelVan.to_xml("isOnderdeelVan"))
 
@@ -555,14 +698,33 @@ class Informatieobject:
 
             for b in self.bevatOnderdeel:
                 root.append(b.to_xml("bevatOnderdeel"))
-        
+
+        if self.heeftRepresentatie:
+            root.append(self.heeftRepresentatie.to_xml("heeftRepresentatie"))
+
         if self.aanvullendeMetagegevens:
             if isinstance(self.aanvullendeMetagegevens, VerwijzingGegevens):
                 self.aanvullendeMetagegevens = [self.aanvullendeMetagegevens]
             for b in self.aanvullendeMetagegevens:
                 root.append(b.to_xml("aanvullendeMetagegevens"))
 
+        if self.gerelateerdInformatieobject:
+            root.append(
+                self.gerelateerdInformatieobject.to_xml("gerelateerdInformatieobject")
+            )
+
         root.append(self.archiefvormer.to_xml("archiefvormer"))
+
+        if self.betrokkene:
+            # allow users to pass either a single BetrokkeneGegevens object, or a list thereof
+            if isinstance(self.betrokkene, BetrokkeneGegevens):
+                self.betrokkene = [self.betrokkene]
+
+            for b in self.betrokkene:
+                root.append(b.to_xml())
+
+        if self.activiteit:
+            root.append(self.activiteit.to_xml("activiteit"))
 
         # allow users to pass either a single BeperkingGebruikGegevens object, or a list thereof
         if isinstance(self.beperkingGebruik, BeperkingGebruikGegevens):
@@ -682,7 +844,7 @@ class Bestand:
         """
         # if url is not set (e.g. when calling Bestand() without the URLBestand argument),
         # it will not be None, but rather an empty "property" object
-        if isinstance(url, property) or url is None: # check if empty
+        if isinstance(url, property) or url is None:  # check if empty
             self._URLBestand = None
         elif validators.url(url):
             self._URLBestand = url
