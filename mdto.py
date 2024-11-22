@@ -472,7 +472,7 @@ class RaadpleeglocatieGegevens:
     def to_xml(self):
         root = ET.Element("raadpleeglocatie")
 
-        # In MDTO, raadpleeglocatie may have no children, strangely enough
+        # raadpleeglocatie may have no children, strangely enough
         if self.raadpleeglocatieFysiek:
             root.append(self.raadpleeglocatieFysiek.to_xml("raadpleeglocatieFysiek"))
 
@@ -488,17 +488,20 @@ class RaadpleeglocatieGegevens:
 
         Valid value: any RFC 3986 compliant URI
 
-        MDTO docs: https://www.nationaalarchief.nl/archiveren/mdto/raadpleeglocatieOnline
+        MDTO docs:
+            https://www.nationaalarchief.nl/archiveren/mdto/raadpleeglocatieOnline
         """
         return self._raadpleeglocatieOnline
 
     @raadpleeglocatieOnline.setter
-    def raadpleeglocatieOnline(self, url: str):
+    def raadpleeglocatieOnline(self, url: str | List[str]):
         # if url is not set, (e.g. when calling RaadpleegLocatieGegevens() without arguments)
         # it will not be None, but rather an empty "property" object
         if isinstance(url, property) or url is None:  # check if empty
             self._raadpleeglocatieOnline = None
-        elif validators.url(url):
+        elif isinstance(url, list) and all(validators.url(u) for u in url):
+            self._raadpleeglocatieOnline = url
+        elif isinstance(url, str) and validators.url(url):
             self._raadpleeglocatieOnline = url
         else:
             _warn(f"URL '{url}' is malformed.")
@@ -573,8 +576,7 @@ class Informatieobject:
     Example:
 
     ```python
-    # Maak informatieobject
-    informatieobject = Informatieobject("Kapvergunning", IdentificatieGegevens(…), …)
+    informatieobject = Informatieobject(IdentificatieGegevens(…), naam="Kapvergunning", …)
 
     xml = informatieobject.to_xml()
     with open("informatieobject.xml", 'w') as output_file:
@@ -589,15 +591,16 @@ class Informatieobject:
         waardering (BegripGegevens): Waardering van het informatieobject volgens een selectielijst
         aggregatieNiveau (BegripGegevens, optional): Aggregatieniveau van het informatieobject
         classificatie (BegripGegevens, optional): Classificatie van het informatieobject
-        trefwoord (str, optional): Trefwoord dat het informatieobject beschrijft
+        trefwoord (str | List[str], optional): Trefwoord dat het informatieobject beschrijft
         omschrijving (str, optional): Omschrijving van het informatieobject
         dekkingInTijd (DekkingInTijdGegevens, optional): Periode waarop het informatieobject betrekking heeft
         dekkingInRuimte (VerwijzingGegevens, optional): Plaats/locatie waar het informatieobject betrekking op heeft
         taal (str, optional): Taal waarin het informatieobject gesteld is
-        event (EventGegevens, optional): Gebeurtenis gerelateerd aan het informatieobject
+        event (EventGegevens | List[EventGegevens], optional): Gebeurtenis gerelateerd aan het informatieobject
         bewaartermijn (TermijnGegevens, optional): Termijn waarin het informatieobject bewaard dient te worden
         informatiecategorie (BegripGegevens, optional): Informatiecategorie uit een selectie- of hotspotlijst waar de bewaartermijn op gebaseerd is
         bevatOnderdeel (VerwijzingGegevens, optional): Verwijzing naar een ander onderdeel dat deel uitmaakt van het informatieobject
+        aanvullendeMetagegevens (VerwijzingGegevens, optional): Verwijzing naar een bestand dat aanvullende (domeinspecifieke) metagegevens bevat
         isOnderdeelVan (VerwijzingGegevens, optional): Bovenliggende aggregatie waar dit informatieobject onderdeel van is
         heeftRepresentatie (VerwijzingGegevens, optional): Verwijzing naar het bestand dat een representatie van het informatieobject is
         aanvullendeMetagegevens (VerwijzingGegevens, optional): Verwijzing naar een bestand dat aanvullende (domeinspecifieke) metagegevens over het informatieobject bevat
@@ -611,15 +614,15 @@ class Informatieobject:
     archiefvormer: VerwijzingGegevens | List[VerwijzingGegevens]
     beperkingGebruik: BeperkingGebruikGegevens | List[BeperkingGebruikGegevens]
     waardering: BegripGegevens
-    aggregatieNiveau: BegripGegevens = None
+    aggregatieniveau: BegripGegevens = None
     classificatie: BegripGegevens = None
-    trefwoord: str = None  # FIXME: should also accept a list
+    trefwoord: str | List[str] = None
     omschrijving: str = None
     raadpleeglocatie: RaadpleeglocatieGegevens = None
     dekkingInTijd: DekkingInTijdGegevens = None
     dekkingInRuimte: VerwijzingGegevens = None
     taal: str = None
-    event: EventGegevens = None  # FIXME: should also accept a list
+    event: EventGegevens | List[EventGegevens] = None
     bewaartermijn: TermijnGegevens = None
     informatiecategorie: BegripGegevens = None
     bevatOnderdeel: VerwijzingGegevens | List[VerwijzingGegevens] = None
@@ -674,8 +677,13 @@ class Informatieobject:
             root.append(self.classificatie.to_xml("classificatie"))
 
         if self.trefwoord:
-            trefwoord_elem = ET.SubElement(root, "trefwoord")
-            trefwoord_elem.text = self.trefwoord
+            # allow users to pass either a single trefwoord, or a list thereof
+            if isinstance(self.trefwoord, str):
+                self.trefwoord = [self.trefwoord]
+
+            for t in self.trefwoord:
+                trefwoord = ET.SubElement(root, "trefwoord")
+                trefwoord.text = t
 
         if self.omschrijving:
             omschrijving_elem = ET.SubElement(root, "omschrijving")
@@ -695,7 +703,11 @@ class Informatieobject:
             taal_elem.text = self.taal
 
         if self.event:
-            root.append(self.event.to_xml())
+            if isinstance(self.event, EventGegevens):
+                self.event = [self.event]
+
+            for e in self.event:
+                root.append(e.to_xml("event"))
 
         root.append(self.waardering.to_xml("waardering"))
 
@@ -711,6 +723,7 @@ class Informatieobject:
         if self.bevatOnderdeel:
             if isinstance(self.bevatOnderdeel, VerwijzingGegevens):
                 self.bevatOnderdeel = [self.bevatOnderdeel]
+
             for b in self.bevatOnderdeel:
                 root.append(b.to_xml("bevatOnderdeel"))
 
