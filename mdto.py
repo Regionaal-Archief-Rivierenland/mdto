@@ -200,10 +200,7 @@ class BegripGegevens:
 
 @dataclass
 class TermijnGegevens:
-    """MDTO termijnGegevens class.
-
-    MDTO docs:
-        https://www.nationaalarchief.nl/archiveren/mdto/termijnGegevens
+    """https://www.nationaalarchief.nl/archiveren/mdto/termijnGegevens
 
     Args:
         termijnTriggerStartLooptijd (BegripGegevens, optional): Gebeurtenis waarna de looptijd van de termijn start
