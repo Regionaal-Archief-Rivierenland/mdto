@@ -147,6 +147,46 @@ with open("bestand.xml", 'w') as output_file:
 
 Het resulterende XML bestand bevat vervolgens de correcte `<omvang>`, `<bestandsformaat>`, `<checksum>` , en `<isRepresentatieVan>` tags. `<URLBestand>` tags kunnen ook worden aangemaakt worden via de optionele `url=` parameter van `create_bestand()`. URLs worden automatisch gevalideerd via de [validators python library](https://pypi.org/project/validators/).
 
+## XML bestanden inlezen
+
+`mdto.py` kan ook MDTO bestanden inlezen en naar python MDTO objecten omzetten via de `from_file` functie.
+
+Stel bijvoorbeeld dat je alle checksums van Bestand XML bestanden wilt updaten:
+
+``` python
+import mdto
+import glob
+import os
+
+# Aangenomen dat je mapstructuur er zo uitziet:
+# mdto_collectie/
+# ├── Kapvergunning/
+# │   ├── 19880405KapvergunningHoogracht.bestand.mdto.xml
+# │   ├── 19880405KapvergunningHoogracht.mdto.xml
+# │   └── 19880405KapvergunningHoogracht.pdf
+# └── Verslag/
+#     ├── 19880409Verslag.mdto.bestand.xml
+#     ├── 19880409Verslag.mdto.xml
+#     └── 19880409Verslag.pdf
+
+
+# itereer door alle Bestand XMLs:
+for bestand_xml in glob.glob('**/*.bestand.mdto.xml', recursive=True):
+    bestand_obj = mdto.from_file(bestand_xml)
+
+    # vind naam + path van het te updaten bestand
+    filename = bestand.naam
+    path = os.path.dirname(bestand_xml) + "/"
+
+    # maak een nieuwe checksum
+    bestand.checksum = mdto.create_checksum(path + filename)
+
+    # schrijf geüpdatet Bestand object terug naar een XML file
+    xml = bestand.to_xml()
+    with open(bestand_xml, 'w') as output_file:
+        xml.write(output_file, xml_declaration=True, short_empty_elements=False)
+```
+
 ## Autocompletion & documentatie in je teksteditor/IDE
 
 `mdto.py` bevat docstrings, zodat teksteditors/IDEs je kunnen ondersteunen met documentatie popups en vensters. Handig als je even niet meer wat een MDTO element precies doet.
