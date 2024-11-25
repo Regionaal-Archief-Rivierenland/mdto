@@ -628,7 +628,7 @@ class Informatieobject:
             root.append(self.dekkingInTijd.to_xml())
 
         if self.dekkingInRuimte:
-            root.append(self.dekkingInRuimte.to_xml())
+            root.append(self.dekkingInRuimte.to_xml("dekkingInRuimte"))
 
         if self.taal:
             taal_elem = ET.SubElement(root, "taal")
