@@ -554,7 +554,7 @@ class Informatieobject:
         archiefvormer (VerwijzingGegevens | List[VerwijzingGegevens]): Organisatie die verantwoordelijk is voor het opmaken en/of ontvangen van het informatieobject
         beperkingGebruik (BeperkingGebruikGegevens | List[BeperkingGebruikGegevens]): Beperking die gesteld is aan het gebruik van het informatieobject
         waardering (BegripGegevens): Waardering van het informatieobject volgens een selectielijst
-        aggregatieNiveau (BegripGegevens, optional): Aggregatieniveau van het informatieobject
+        aggregatieniveau (BegripGegevens, optional): Aggregatieniveau van het informatieobject
         classificatie (BegripGegevens, optional): Classificatie van het informatieobject
         trefwoord (str | List[str], optional): Trefwoord dat het informatieobject beschrijft
         omschrijving (str, optional): Omschrijving van het informatieobject
@@ -633,8 +633,8 @@ class Informatieobject:
         naam_elem = ET.SubElement(root, "naam")
         naam_elem.text = self.naam
 
-        if self.aggregatieNiveau:
-            root.append(self.aggregatieNiveau.to_xml("aggregatieniveau"))
+        if self.aggregatieniveau:
+            root.append(self.aggregatieniveau.to_xml("aggregatieniveau"))
 
         if self.classificatie:
             root.append(self.classificatie.to_xml("classificatie"))
