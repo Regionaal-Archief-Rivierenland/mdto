@@ -646,7 +646,7 @@ class Informatieobject:
                 self.event = [self.event]
 
             for e in self.event:
-                root.append(e.to_xml("event"))
+                root.append(e.to_xml())
 
         root.append(self.waardering.to_xml("waardering"))
 
