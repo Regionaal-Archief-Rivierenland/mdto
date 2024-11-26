@@ -174,11 +174,11 @@ for bestand_xml_path in Path('.').rglob('*.bestand.mdto.xml'):
     bestand = mdto.from_file(bestand_xml)
 
     # vind naam + path van het te updaten bestand
-    filename = bestand_obj.naam
-    file_path = bestand_xml_path.parent / filename
+    filename = bestand.naam
+    filepath = str(bestand_xml_path.parent / filename)
 
     # maak een nieuwe checksum
-    bestand.checksum = mdto.create_checksum(path + filename)
+    bestand.checksum = mdto.create_checksum(filepath)
 
     # schrijf geüpdatet Bestand object terug naar een XML file
     xml = bestand.to_xml()
