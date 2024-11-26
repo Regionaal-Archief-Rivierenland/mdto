@@ -155,8 +155,7 @@ Stel bijvoorbeeld dat je alle checksums van Bestand XML bestanden wilt updaten:
 
 ``` python
 import mdto
-import glob
-import os
+from pathlib import Path
 
 # Aangenomen dat je mapstructuur er zo uitziet:
 # mdto_collectie/
@@ -171,12 +170,12 @@ import os
 
 
 # itereer door alle Bestand XMLs:
-for bestand_xml in glob.glob('**/*.bestand.mdto.xml', recursive=True):
-    bestand_obj = mdto.from_file(bestand_xml)
+for bestand_xml_path in Path('.').rglob('*.bestand.mdto.xml'):
+    bestand = mdto.from_file(bestand_xml)
 
     # vind naam + path van het te updaten bestand
-    filename = bestand.naam
-    path = os.path.dirname(bestand_xml) + "/"
+    filename = bestand_obj.naam
+    file_path = bestand_xml_path.parent / filename
 
     # maak een nieuwe checksum
     bestand.checksum = mdto.create_checksum(path + filename)
