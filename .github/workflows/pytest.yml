@@ -1,6 +1,6 @@
 name: Python tests
 
-# run whenever 1) main gets a commit, or 2) main gets a PR
+# run tests whenever main gets a commit or PR
 on:
   push:
     branches:
