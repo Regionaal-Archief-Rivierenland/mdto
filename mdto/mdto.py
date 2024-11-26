@@ -1093,13 +1093,6 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
         Informatieobject | Bestand: A new MDTO object
     """
 
-    # Arg constructors:
-    def singleton(d, k, v) -> dict:
-        d[k] = v
-
-    def repeatable(d, k, v) -> dict:
-        d[k].append(v)
-
     # Parsers:
     def parse_text(node) -> str:
         return node.text
@@ -1123,135 +1116,143 @@ def from_file(xmlfile: str) -> Informatieobject | Bestand:
                 parse_identificatie(node[1]),
             )
 
-    def elem_to_mdto(
-        elem: ET.Element, mdto_class: classmethod, class_xml_parsers: dict
-    ):
+    def elem_to_mdto(elem: ET.Element, mdto_class: classmethod, mdto_xml_parsers: dict):
         """Construct MDTO class from given XML element, using parsers specified in
-        class_xml_parsers.
+        mdto_xml_parsers.
 
         Returns:
             MDTO instance: a initialized MDTO instance of type `mdto_class`
         """
-        # only pass list to constructor if argument is repeatable
-        constructor_args = {
-            k: [] if v[1] == repeatable else None for k, v in class_xml_parsers.items()
-        }
+        # initialize dictionary of keyword arguments (to be passed to MDTO class constructor)
+        constructor_args = {mdto_field: [] for mdto_field in mdto_xml_parsers}
 
         for child in elem:
-            mdto_field = child.tag.removeprefix("{https://www.nationaalarchief.nl/mdto}")
-            xml_parser, add_to_constructor = class_xml_parsers[mdto_field]
-            add_to_constructor(constructor_args, mdto_field, xml_parser(child))
+            mdto_field = child.tag.removeprefix(
+                "{https://www.nationaalarchief.nl/mdto}"
+            )
+            # retrieve parser
+            xml_parser = mdto_xml_parsers[mdto_field]
+            # add value of parsed child element to class constructor args
+            constructor_args[mdto_field].append(xml_parser(child))
+
+        for argname, value in constructor_args.items():
+            # Convert empty argument lists into None values
+            if len(value) == 0:
+                constructor_args[argname] = None
+            # Convert one-itemed argument lists to non-lists
+            elif len(value) == 1:
+                constructor_args[argname] = value[0]
 
         return mdto_class(**constructor_args)
 
     begrip_parsers = {
-        "begripLabel": (parse_text, singleton),
-        "begripCode": (parse_text, singleton),
-        "begripBegrippenlijst": (parse_verwijzing, singleton),
+        "begripLabel": parse_text,
+        "begripCode": parse_text,
+        "begripBegrippenlijst": parse_verwijzing,
     }
     parse_begrip = lambda e: elem_to_mdto(e, BegripGegevens, begrip_parsers)
 
     termijn_parsers = {
-        "termijnTriggerStartLooptijd": (parse_begrip, singleton),
-        "termijnStartdatumLooptijd": (parse_text, singleton),
-        "termijnLooptijd": (parse_text, singleton),
-        "termijnEinddatum": (parse_text, singleton),
+        "termijnTriggerStartLooptijd": parse_begrip,
+        "termijnStartdatumLooptijd": parse_text,
+        "termijnLooptijd": parse_text,
+        "termijnEinddatum": parse_text,
     }
     parse_termijn = lambda e: elem_to_mdto(e, TermijnGegevens, termijn_parsers)
 
     beperking_parsers = {
-        "beperkingGebruikType": (parse_begrip, singleton),
-        "beperkingGebruikNadereBeschrijving": (parse_text, singleton),
-        "beperkingGebruikDocumentatie": (parse_verwijzing, repeatable),
-        "beperkingGebruikTermijn": (parse_termijn, singleton),
+        "beperkingGebruikType": parse_begrip,
+        "beperkingGebruikNadereBeschrijving": parse_text,
+        "beperkingGebruikDocumentatie": parse_verwijzing,
+        "beperkingGebruikTermijn": parse_termijn,
     }
     parse_beperking = lambda e: elem_to_mdto(
         e, BeperkingGebruikGegevens, beperking_parsers
     )
 
     raadpleeglocatie_parsers = {
-        "raadpleeglocatieFysiek": (parse_verwijzing, repeatable),
-        "raadpleeglocatieOnline": (parse_text, repeatable),
+        "raadpleeglocatieFysiek": parse_verwijzing,
+        "raadpleeglocatieOnline": parse_text,
     }
     parse_raadpleeglocatie = lambda e: elem_to_mdto(
         e, RaadpleeglocatieGegevens, raadpleeglocatie_parsers
     )
 
     dekking_in_tijd_parsers = {
-        "dekkingInTijdType": (parse_begrip, singleton),
-        "dekkingInTijdBegindatum": (parse_text, singleton),
-        "dekkingInTijdEinddatum": (parse_text, singleton),
+        "dekkingInTijdType": parse_begrip,
+        "dekkingInTijdBegindatum": parse_text,
+        "dekkingInTijdEinddatum": parse_text,
     }
     parse_dekking_in_tijd = lambda e: elem_to_mdto(
         e, DekkingInTijdGegevens, dekking_in_tijd_parsers
     )
 
     event_parsers = {
-        "eventType": (parse_begrip, singleton),
-        "eventTijd": (parse_text, singleton),
-        "eventVerantwoordelijkeActor": (parse_verwijzing, singleton),
-        "eventResultaat": (parse_text, singleton),
+        "eventType": parse_begrip,
+        "eventTijd": parse_text,
+        "eventVerantwoordelijkeActor": parse_verwijzing,
+        "eventResultaat": parse_text,
     }
     parse_event = lambda e: elem_to_mdto(e, EventGegevens, event_parsers)
-    
+
     gerelateerd_informatieobject_parsers = {
-        "gerelateerdInformatieobjectVerwijzing": (parse_verwijzing, singleton),
-        "gerelateerdInformatieobjectTypeRelatie": (parse_begrip, singleton),
+        "gerelateerdInformatieobjectVerwijzing": parse_verwijzing,
+        "gerelateerdInformatieobjectTypeRelatie": parse_begrip,
     }
     parse_gerelateerd_informatieobject = lambda e: elem_to_mdto(
         e, GerelateerdInformatieobjectGegevens, gerelateerd_informatieobject_parsers
     )
 
     betrokkene_parsers = {
-        "betrokkeneTypeRelatie": (parse_begrip, singleton),
-        "betrokkeneActor": (parse_verwijzing, singleton),
+        "betrokkeneTypeRelatie": parse_begrip,
+        "betrokkeneActor": parse_verwijzing,
     }
     parse_betrokkene = lambda e: elem_to_mdto(e, BetrokkeneGegevens, betrokkene_parsers)
 
     checksum_parsers = {
-        "checksumAlgoritme": (parse_begrip, singleton),
-        "checksumWaarde": (parse_text, singleton),
-        "checksumDatum": (parse_text, singleton),
+        "checksumAlgoritme": parse_begrip,
+        "checksumWaarde": parse_text,
+        "checksumDatum": parse_text,
     }
     parse_checksum = lambda e: elem_to_mdto(e, ChecksumGegevens, checksum_parsers)
 
     informatieobject_parsers = {
-        "naam": (parse_text, singleton),
-        "identificatie": (parse_identificatie, repeatable),
-        "aggregatieniveau": (parse_begrip, singleton),
-        "classificatie": (parse_begrip, repeatable),
-        "trefwoord": (parse_text, repeatable),
-        "omschrijving": (parse_text, singleton),
-        "raadpleeglocatie": (parse_raadpleeglocatie, repeatable),
-        "dekkingInTijd": (parse_dekking_in_tijd, repeatable),
-        "dekkingInRuimte": (parse_verwijzing, repeatable),
-        "taal": (parse_text, repeatable),
-        "event": (parse_event, repeatable),
-        "waardering": (parse_begrip, singleton),
-        "bewaartermijn": (parse_termijn, singleton),
-        "informatiecategorie": (parse_begrip, singleton),
-        "isOnderdeelVan": (parse_verwijzing, repeatable),
-        "bevatOnderdeel": (parse_verwijzing, repeatable),
-        "heeftRepresentatie": (parse_verwijzing, repeatable),
-        "aanvullendeMetagegevens": (parse_verwijzing, repeatable),
-        "gerelateerdInformatieobject": (parse_gerelateerd_informatieobject, repeatable),
-        "archiefvormer": (parse_verwijzing, repeatable),
-        "betrokkene": (parse_betrokkene, repeatable),
-        "activiteit": (parse_verwijzing, repeatable),
-        "beperkingGebruik": (parse_beperking, repeatable),
+        "naam": parse_text,
+        "identificatie": parse_identificatie,
+        "aggregatieniveau": parse_begrip,
+        "classificatie": parse_begrip,
+        "trefwoord": parse_text,
+        "omschrijving": parse_text,
+        "raadpleeglocatie": parse_raadpleeglocatie,
+        "dekkingInTijd": parse_dekking_in_tijd,
+        "dekkingInRuimte": parse_verwijzing,
+        "taal": parse_text,
+        "event": parse_event,
+        "waardering": parse_begrip,
+        "bewaartermijn": parse_termijn,
+        "informatiecategorie": parse_begrip,
+        "isOnderdeelVan": parse_verwijzing,
+        "bevatOnderdeel": parse_verwijzing,
+        "heeftRepresentatie": parse_verwijzing,
+        "aanvullendeMetagegevens": parse_verwijzing,
+        "gerelateerdInformatieobject": parse_gerelateerd_informatieobject,
+        "archiefvormer": parse_verwijzing,
+        "betrokkene": parse_betrokkene,
+        "activiteit": parse_verwijzing,
+        "beperkingGebruik": parse_beperking,
     }
     parse_informatieobject = lambda e: elem_to_mdto(
         e, Informatieobject, informatieobject_parsers
     )
 
     bestand_parsers = {
-        "naam": (parse_text, singleton),
-        "identificatie": (parse_identificatie, repeatable),
-        "omvang": (parse_int, singleton),
-        "checksum": (parse_checksum, repeatable),
-        "bestandsformaat": (parse_begrip, singleton),
-        "URLBestand": (parse_text, singleton),
-        "isRepresentatieVan": (parse_verwijzing, singleton),
+        "naam": parse_text,
+        "identificatie": parse_identificatie,
+        "omvang": parse_int,
+        "checksum": parse_checksum,
+        "bestandsformaat": parse_begrip,
+        "URLBestand": parse_text,
+        "isRepresentatieVan": parse_verwijzing,
     }
     parse_bestand = lambda e: elem_to_mdto(e, Bestand, bestand_parsers)
 
