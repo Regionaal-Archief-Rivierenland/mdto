@@ -759,14 +759,22 @@ class Bestand:
             ET.ElementTree: XML tree representing Bestand object. This object can be written to a file by calling `.write()`.
         """
 
-        mdto = ET.Element(
-            "MDTO",
-            attrib={
-                "xmlns": "https://www.nationaalarchief.nl/mdto",
-                "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-                "xsi:schemaLocation": "https://www.nationaalarchief.nl/mdto https://www.nationaalarchief.nl/mdto/MDTO-XML1.0.1.xsd",
-            },
+        # construct attributes of <MDTO>
+        xsi_ns = "http://www.w3.org/2001/XMLSchema-instance"
+        nsmap = {
+            None: "https://www.nationaalarchief.nl/mdto",  # default namespace (i.e. xmlns=https...)
+            "xsi": xsi_ns,
+        }
+
+        # create <MDTO>
+        mdto = ET.Element("MDTO", nsmap=nsmap)
+
+        # set schemaLocation attribute of <MDTO>
+        mdto.set(
+            f"{{{xsi_ns}}}schemaLocation",
+            "https://www.nationaalarchief.nl/mdto https://www.nationaalarchief.nl/mdto/MDTO-XML1.0.1.xsd",
         )
+
 
         root = ET.SubElement(mdto, "bestand")
 
